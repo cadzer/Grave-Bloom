@@ -316,16 +316,6 @@ export class Renderer {
 
         if (weaponManager) {
             for (const w of weaponManager.weapons) {
-                if (w.config.category === 'orbit') {
-                    const t = this._cachedTime * 0.001;
-                    const ringR = 60 + (w.level - 1) * 38;
-                    for (let r = 0; r < w.level && r < 3; r++) {
-                        const angle = t * 2.8 + r * 1.2;
-                        const ox = Math.cos(angle) * (ringR + r * 38);
-                        const oy = Math.sin(angle) * (ringR + r * 38);
-                        this.drawLight(ctx, cx + ox, cy + oy, 50, [139, 58, 98], 0.04);
-                    }
-                }
                 if (w.config.category === 'pulse') {
                     const pulse = 0.02 + Math.sin(this._cachedTime * 0.003) * 0.01;
                     this.drawLight(ctx, cx, cy, 130 + (w.level - 1) * 10, [184, 217, 78], pulse);
