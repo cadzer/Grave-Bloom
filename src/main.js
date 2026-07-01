@@ -52,7 +52,20 @@ class Game {
         this.ui.showMenu();
 
         this.setupEvents();
+        this._restoreFullscreen();
         this.gameLoop(0);
+    }
+
+    _saveFullscreen() {
+        try { localStorage.setItem('gravebloom_fullscreen', document.fullscreenElement ? '1' : '0'); } catch {}
+    }
+
+    _restoreFullscreen() {
+        try {
+            if (localStorage.getItem('gravebloom_fullscreen') === '1') {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        } catch {}
     }
 
     xpForLevel(level) {
@@ -410,6 +423,7 @@ class Game {
                     } else {
                         document.documentElement.requestFullscreen();
                     }
+                    this._saveFullscreen();
                     this.ui.showSettings(this.sound);
                     return;
                 }
@@ -538,6 +552,7 @@ class Game {
                     } else {
                         document.documentElement.requestFullscreen();
                     }
+                    this._saveFullscreen();
                     this.ui.showSettings(this.sound);
                     return;
                 }
