@@ -1,0 +1,7 @@
+node_modules/
+build/
+cache/
+*.ico
+installer/node_modules/
+installer/*.exe
+_test_temp.mjs

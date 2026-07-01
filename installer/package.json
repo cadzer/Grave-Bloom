@@ -1,0 +1,14 @@
+{
+  "name": "grave-bloom-installer",
+  "version": "1.0.0",
+  "description": "Grave Bloom Installer",
+  "main": "install.js",
+  "bin": "install.js",
+  "scripts": {
+    "build": "npx pkg . --targets node18-win-x64 --output ../build/GraveBloom-Installer.exe"
+  },
+  "pkg": {
+    "targets": ["node18-win-x64"],
+    "outputPath": "../build"
+  }
+}

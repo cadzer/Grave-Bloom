@@ -1,0 +1,21 @@
+{
+  "name": "grave-bloom",
+  "version": "1.0.0",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx nw .",
+    "build": "node build.js"
+  },
+  "window": {
+    "title": "Grave Bloom",
+    "icon": "icon.png",
+    "width": 1280,
+    "height": 720,
+    "min_width": 800,
+    "min_height": 450,
+    "resizable": true,
+    "fullscreen": false,
+    "position": "center"
+  },
+  "chromium-args": "--disable-gpu-compositing"
+}
