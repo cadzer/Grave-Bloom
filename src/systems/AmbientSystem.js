@@ -24,6 +24,7 @@ const BIOME_AMBIENT = [
 export class AmbientSystem {
     constructor() {
         this.particles = [];
+        this._fogCount = 0;
         this.biomeIdx = 0;
         this.spawnTimer = 0;
     }
@@ -69,6 +70,7 @@ export class AmbientSystem {
             if (p.life <= 0) {
                 this.particles[i] = this.particles[this.particles.length - 1];
                 this.particles.pop();
+                if (p.type === 'fog') this._fogCount--;
             }
         }
     }
@@ -120,8 +122,7 @@ export class AmbientSystem {
 
     _spawnFog(biomeIdx) {
         const cfg = BIOME_AMBIENT[biomeIdx].fog;
-        const existingFog = this.particles.filter(p => p.type === 'fog').length;
-        if (existingFog >= cfg.count) return;
+        if (this._fogCount >= cfg.count) return;
         if (Math.random() > 0.01) return;
 
         const colors = cfg.colors;
@@ -137,9 +138,11 @@ export class AmbientSystem {
             color: colors[Math.floor(Math.random() * colors.length)],
             alpha: cfg.alpha
         });
+        this._fogCount++;
     }
 
     draw(ctx, playerX, playerY) {
+        ctx.globalCompositeOperation = 'lighter';
         for (const p of this.particles) {
             const sx = p.x - playerX + W / 2;
             const sy = p.y - playerY + H / 2;
@@ -149,38 +152,35 @@ export class AmbientSystem {
 
             if (p.type === 'mote') {
                 ctx.globalAlpha = alpha;
-                ctx.globalCompositeOperation = 'lighter';
                 ctx.fillStyle = p.color;
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.size, 0, Math.PI * 2);
                 ctx.fill();
             } else if (p.type === 'ember') {
                 ctx.globalAlpha = alpha;
-                ctx.globalCompositeOperation = 'lighter';
-                const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, p.size * 2);
-                grad.addColorStop(0, p.color);
-                grad.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.fillStyle = grad;
+                ctx.fillStyle = p.color;
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.size * 2, 0, Math.PI * 2);
+                ctx.arc(sx, sy, p.size, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = '#fff';
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.size * 0.3, 0, Math.PI * 2);
                 ctx.fill();
-            } else if (p.type === 'fog') {
-                ctx.globalAlpha = alpha * 0.5;
-                ctx.globalCompositeOperation = 'source-over';
-                const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, p.size);
-                grad.addColorStop(0, p.color);
-                grad.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.arc(sx, sy, p.size, 0, Math.PI * 2);
-                ctx.fill();
             }
         }
-        ctx.globalAlpha = 1;
         ctx.globalCompositeOperation = 'source-over';
+        for (const p of this.particles) {
+            if (p.type !== 'fog') continue;
+            const sx = p.x - playerX + W / 2;
+            const sy = p.y - playerY + H / 2;
+            if (sx < -200 || sx > W + 200 || sy < -200 || sy > H + 200) continue;
+            const alpha = Math.min(1, p.life / 2) * p.alpha * 0.5;
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(sx, sy, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
     }
 }

@@ -632,8 +632,7 @@ export class Enemy {
         const crackGlow = 0.5 + Math.sin(t * 4) * 0.3;
         ctx.strokeStyle = `rgba(230, 126, 34, ${crackGlow})`;
         ctx.lineWidth = 2;
-        ctx.shadowColor = '#e67e22';
-        ctx.shadowBlur = 8;
+
 
         // Crack 1
         ctx.beginPath();
@@ -655,7 +654,6 @@ export class Enemy {
         ctx.lineTo(0, -r * 0.15);
         ctx.lineTo(r * 0.08, r * 0.02);
         ctx.stroke();
-        ctx.shadowBlur = 0;
 
         // ====== HEAD — forward-facing mandibles ======
         const headTilt = Math.sin(t * 3) * 0.08;
@@ -674,8 +672,6 @@ export class Enemy {
         // Eyes — multiple small orange glowing eyes
         const eyeGlow = 0.7 + Math.sin(t * 5) * 0.3;
         ctx.fillStyle = `rgba(230, 126, 34, ${eyeGlow})`;
-        ctx.shadowColor = '#e67e22';
-        ctx.shadowBlur = 6;
         const eyePositions = [
             [-8, -r * 0.52, 2.5], [8, -r * 0.52, 2.5],
             [-14, -r * 0.46, 2], [14, -r * 0.46, 2],
@@ -686,7 +682,6 @@ export class Enemy {
             ctx.arc(ex, ey, es, 0, Math.PI * 2);
             ctx.fill();
         }
-        ctx.shadowBlur = 0;
 
         // Mandibles — two curved pincers
         const mandibleOpen = Math.sin(t * 6) * 0.15 + 0.15;
@@ -1014,15 +1009,12 @@ export class Enemy {
 
         // Glowing red eyes in visor — pulsing intensity
         ctx.fillStyle = '#e74c3c';
-        ctx.shadowColor = '#e74c3c';
-        ctx.shadowBlur = 8 + visorGlow * 6;
         ctx.beginPath();
         ctx.arc(-10, -r * 0.5, 4 + visorGlow * 0.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.beginPath();
         ctx.arc(10, -r * 0.5, 4 + visorGlow * 0.5, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
 
         // Eye inner bright cores
         ctx.fillStyle = '#f5b7b1';
@@ -1365,12 +1357,9 @@ export class Enemy {
         // Visor glow with animation
         const visorGlow = 0.7 + Math.sin(this.animTimer * 3) * 0.3;
         ctx.fillStyle = flash ? '#f88' : `rgba(160,208,255,${visorGlow})`;
-        ctx.shadowColor = '#a0d0ff';
-        ctx.shadowBlur = 10 + Math.sin(this.animTimer * 2) * 4;
         ctx.beginPath();
         ctx.ellipse(r * 0.05, -r * 0.7, r * 0.3, r * 0.1, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
 
         ctx.restore();
     }

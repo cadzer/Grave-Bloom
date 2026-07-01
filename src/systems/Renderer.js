@@ -54,6 +54,7 @@ export class Renderer {
         this.hitStopTimer = 0;
         this.screenFlash = { r: 255, g: 255, b: 255, alpha: 0, timer: 0 };
         this.biomeTint = { r: 0, g: 0, b: 0 };
+        this._cachedTime = 0;
         for (let i = 0; i < BIOMES.length; i++) {
             this.tiles[i] = this.createGrassTile(BIOMES[i]);
         }
@@ -136,20 +137,19 @@ export class Renderer {
     _initPostProcess() {
         const w = GAME.WIDTH;
         const h = GAME.HEIGHT;
+        const halfW = w >> 1;
+        const halfH = h >> 1;
 
         this.bloomCanvas = document.createElement('canvas');
-        this.bloomCanvas.width = w;
-        this.bloomCanvas.height = h;
+        this.bloomCanvas.width = halfW;
+        this.bloomCanvas.height = halfH;
         this.bloomCtx = this.bloomCanvas.getContext('2d');
-
-        this.bloomBlurCanvas = document.createElement('canvas');
-        this.bloomBlurCanvas.width = w >> 1;
-        this.bloomBlurCanvas.height = h >> 1;
-        this.bloomBlurCtx = this.bloomBlurCanvas.getContext('2d');
 
         this._vignetteCanvas = null;
         this._vignetteW = 0;
         this._vignetteH = 0;
+
+        this._gradingFill = null;
     }
 
     _ensureVignette(w, h) {
@@ -173,19 +173,14 @@ export class Renderer {
         const halfW = w >> 1;
         const halfH = h >> 1;
 
-        const blurCtx = this.bloomBlurCtx;
-        blurCtx.clearRect(0, 0, halfW, halfH);
-        blurCtx.drawImage(ctx.canvas, 0, 0, w, h, 0, 0, halfW, halfH);
-
         const bctx = this.bloomCtx;
-        bctx.clearRect(0, 0, w, h);
-        bctx.imageSmoothingEnabled = true;
-        bctx.drawImage(this.bloomBlurCanvas, 0, 0, halfW, halfH, 0, 0, w, h);
+        bctx.clearRect(0, 0, halfW, halfH);
+        bctx.drawImage(ctx.canvas, 0, 0, w, h, 0, 0, halfW, halfH);
 
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
         ctx.globalAlpha = strength || 0.12;
-        ctx.drawImage(this.bloomCanvas, 0, 0);
+        ctx.drawImage(this.bloomCanvas, 0, 0, halfW, halfH, 0, 0, w, h);
         ctx.globalAlpha = 1;
         ctx.restore();
     }
@@ -202,9 +197,14 @@ export class Renderer {
             [18, 6, 0]
         ];
         const t = tints[biomeIdx] || tints[0];
+        const key = `${t[0]}_${t[1]}_${t[2]}`;
+        if (this._gradingFill !== key) {
+            this._gradingFill = key;
+            this._gradingColor = `rgb(${255 - t[0]},${255 - t[1]},${255 - t[2]})`;
+        }
         ctx.save();
         ctx.globalCompositeOperation = 'multiply';
-        ctx.fillStyle = `rgb(${255 - t[0]},${255 - t[1]},${255 - t[2]})`;
+        ctx.fillStyle = this._gradingColor;
         ctx.fillRect(0, 0, w, h);
         ctx.restore();
     }
@@ -294,29 +294,28 @@ export class Renderer {
     drawLight(ctx, sx, sy, radius, color, intensity) {
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
-        const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius);
-        grad.addColorStop(0, `rgba(${color[0]},${color[1]},${color[2]},${intensity})`);
-        grad.addColorStop(0.4, `rgba(${color[0]},${color[1]},${color[2]},${intensity * 0.4})`);
-        grad.addColorStop(1, `rgba(${color[0]},${color[1]},${color[2]},0)`);
-        ctx.fillStyle = grad;
+        ctx.globalAlpha = intensity;
+        ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
         ctx.beginPath();
         ctx.arc(sx, sy, radius, 0, Math.PI * 2);
         ctx.fill();
+        ctx.globalAlpha = 1;
         ctx.restore();
     }
 
     drawDynamicLighting(ctx, cx, cy, player, weaponManager, bosses) {
+        this._cachedTime = Date.now();
         this.drawLight(ctx, cx, cy, 200, [124, 154, 110], 0.06);
 
         if (player.hp > 0 && player.hp / player.maxHp < 0.25) {
-            const pulse = 0.03 + Math.sin(Date.now() * 0.005) * 0.015;
+            const pulse = 0.03 + Math.sin(this._cachedTime * 0.005) * 0.015;
             this.drawLight(ctx, cx, cy, 180, [180, 50, 50], pulse);
         }
 
         if (weaponManager) {
             for (const w of weaponManager.weapons) {
                 if (w.config.category === 'orbit') {
-                    const t = Date.now() * 0.001;
+                    const t = this._cachedTime * 0.001;
                     const ringR = 60 + (w.level - 1) * 38;
                     for (let r = 0; r < w.level && r < 3; r++) {
                         const angle = t * 2.8 + r * 1.2;
@@ -326,7 +325,7 @@ export class Renderer {
                     }
                 }
                 if (w.config.category === 'pulse') {
-                    const pulse = 0.02 + Math.sin(Date.now() * 0.003) * 0.01;
+                    const pulse = 0.02 + Math.sin(this._cachedTime * 0.003) * 0.01;
                     this.drawLight(ctx, cx, cy, 130 + (w.level - 1) * 10, [184, 217, 78], pulse);
                 }
             }
@@ -337,7 +336,7 @@ export class Renderer {
                 if (b.dead) continue;
                 const bx = cx + (b.x - player.x);
                 const by = cy + (b.y - player.y);
-                const pulse = 0.06 + Math.sin(Date.now() * 0.002) * 0.02;
+                const pulse = 0.06 + Math.sin(this._cachedTime * 0.002) * 0.02;
                 this.drawLight(ctx, bx, by, 200, [200, 100, 50], pulse);
                 this.drawLight(ctx, bx, by, 120, [255, 150, 80], pulse * 0.5);
             }

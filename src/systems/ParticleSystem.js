@@ -116,9 +116,9 @@ export class ParticleSystem {
                         this._get({
                             x: bx, y: by,
                             vx: Math.cos(a) * 25, vy: -70 - Math.random() * 70,
-                            life: 1.4, maxLife: 1.4, size: 7, color: 'rgba(142,68,173,0.5)',
+                            life: 1.4, maxLife: 1.4, size: 7, color: '#8e44ad',
                             gravity: -20, shrink: true,
-                            shape: 'smoke', additive: true, rotation: 0, rotSpeed: 0, drag: 0.95
+                            shape: 'circle', additive: true, rotation: 0, rotSpeed: 0, drag: 0.95
                         });
                     }
                 }
@@ -170,9 +170,9 @@ export class ParticleSystem {
                         this._get({
                             x: bx, y: by,
                             vx: Math.cos(a) * 35, vy: -50 - Math.random() * 70,
-                            life: 1.6, maxLife: 1.6, size: 8, color: 'rgba(231,76,60,0.5)',
+                            life: 1.6, maxLife: 1.6, size: 8, color: '#e74c3c',
                             gravity: -10, shrink: true,
-                            shape: 'smoke', additive: true, rotation: 0, rotSpeed: 0, drag: 0.94
+                            shape: 'circle', additive: true, rotation: 0, rotSpeed: 0, drag: 0.94
                         });
                     }
                 }
@@ -241,9 +241,9 @@ export class ParticleSystem {
                         this._get({
                             x: bx, y: by,
                             vx: Math.cos(a) * 20, vy: -40 - Math.random() * 50,
-                            life: 1.2, maxLife: 1.2, size: 6, color: 'rgba(160,208,255,0.5)',
+                            life: 1.2, maxLife: 1.2, size: 6, color: '#a0d0ff',
                             gravity: -15, shrink: true,
-                            shape: 'smoke', additive: true, rotation: 0, rotSpeed: 0, drag: 0.93
+                            shape: 'circle', additive: true, rotation: 0, rotSpeed: 0, drag: 0.93
                         });
                     }
                 }
@@ -265,8 +265,9 @@ export class ParticleSystem {
             const p = this.pool[i];
             p.vy += p.gravity * dt;
             if (p.drag) {
-                p.vx *= Math.pow(p.drag, dt * 60);
-                p.vy *= Math.pow(p.drag, dt * 60);
+                const factor = Math.pow(p.drag, dt * 60);
+                p.vx *= factor;
+                p.vy *= factor;
             }
             p.prevX = p.x;
             p.prevY = p.y;
@@ -282,26 +283,36 @@ export class ParticleSystem {
     }
 
     draw(ctx) {
+        if (this.active === 0) return;
+
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.beginPath();
+        let lastAdditive = false;
+
         for (let i = 0; i < this.active; i++) {
             const p = this.pool[i];
+            if (p.additive !== lastAdditive) {
+                ctx.fill();
+                ctx.globalCompositeOperation = p.additive ? 'lighter' : 'source-over';
+                ctx.beginPath();
+                lastAdditive = p.additive;
+            }
+
             const alpha = Math.min(1, p.life / p.maxLife * 2);
             const lifeRatio = p.life / p.maxLife;
             const r = p.shrink ? p.size * lifeRatio : p.size;
             if (r <= 0.1) continue;
 
-            ctx.save();
             ctx.globalAlpha = alpha;
-            if (p.additive) ctx.globalCompositeOperation = 'lighter';
 
             switch (p.shape) {
                 case 'spark': this._drawSpark(ctx, p, r); break;
-                case 'smoke': this._drawSmoke(ctx, p, r, alpha); break;
+                case 'smoke': this._drawSmoke(ctx, p, r); break;
                 case 'debris': this._drawDebris(ctx, p, r); break;
                 default: this._drawCircle(ctx, p, r); break;
             }
-
-            ctx.restore();
         }
+        ctx.fill();
         ctx.globalAlpha = 1;
         ctx.globalCompositeOperation = 'source-over';
     }
@@ -316,13 +327,13 @@ export class ParticleSystem {
     _drawSpark(ctx, p, r) {
         const dx = p.x - p.prevX;
         const dy = p.y - p.prevY;
-        const speed = Math.sqrt(dx * dx + dy * dy);
         const angle = Math.atan2(dy, dx);
 
+        ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(angle);
 
-        const len = Math.min(r * 2.5, speed * 0.3 + r);
+        const len = r * 2.5;
         const w = r * 0.4;
 
         ctx.fillStyle = p.color;
@@ -334,28 +345,24 @@ export class ParticleSystem {
         ctx.closePath();
         ctx.fill();
 
-        ctx.fillStyle = '#fff';
-        ctx.globalAlpha *= 0.5;
-        ctx.beginPath();
-        ctx.arc(0, 0, r * 0.3, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.restore();
     }
 
-    _drawSmoke(ctx, p, r, alpha) {
-        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
-        grad.addColorStop(0, p.color);
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = grad;
+    _drawSmoke(ctx, p, r) {
+        ctx.globalAlpha *= 0.6;
+        ctx.fillStyle = p.color;
         ctx.beginPath();
         ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
         ctx.fill();
     }
 
     _drawDebris(ctx, p, r) {
+        ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rotation);
         ctx.fillStyle = p.color;
         ctx.fillRect(-r, -r * 0.6, r * 2, r * 1.2);
+        ctx.restore();
     }
 
     clear() { this.active = 0; }

@@ -410,8 +410,6 @@ export class Boss {
 
         // ====== EYES (type-colored, pulsing) ======
         ctx.fillStyle = bt.eyeColor;
-        ctx.shadowColor = bt.eyeColor;
-        ctx.shadowBlur = 10 + visorGlow * 5;
 
         const eyeY = bt.headShape === 'flat' ? -half * 0.63 : -half * 0.62;
         const eyeSpacing = bt.headShape === 'dome' ? half * 0.2 : 14;
@@ -421,7 +419,6 @@ export class Boss {
         ctx.beginPath();
         ctx.arc(eyeSpacing, eyeY, 5, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
 
         // Eye inner glow
         ctx.fillStyle = '#f5b7b1';
@@ -468,10 +465,6 @@ export class Boss {
         const pct = Math.max(0, this.hp / this.maxHp);
         const bt = this.bossType;
 
-        // Outer glow
-        ctx.shadowColor = bt.accentColor;
-        ctx.shadowBlur = 8;
-
         // Background
         ctx.fillStyle = 'rgba(0,0,0,0.7)';
         ctx.beginPath();
@@ -484,8 +477,6 @@ export class Boss {
         ctx.beginPath();
         ctx.roundRect(barX - 2, barY - 2, barW + 4, barH + 4, 5);
         ctx.stroke();
-
-        ctx.shadowBlur = 0;
 
         // Inner background
         ctx.fillStyle = COLORS.BOSS_HP_BAR_BG;
@@ -512,10 +503,7 @@ export class Boss {
         ctx.fillStyle = bt.accentColor;
         ctx.font = 'bold 16px Rajdhani';
         ctx.textAlign = 'center';
-        ctx.shadowColor = '#000';
-        ctx.shadowBlur = 4;
         ctx.fillText(bossName, ctx.canvas.width / 2, barY - 8);
-        ctx.shadowBlur = 0;
 
         // HP text
         ctx.fillStyle = '#fff';

@@ -876,13 +876,14 @@ class Game {
             this.ui.showAnnouncement(announcement.name, announcement.message);
         }
 
+        const pickupR2 = this.player.pickupRadius * this.player.pickupRadius;
+
         for (const gem of this.gems) {
             gem.update(dt, this.player.x, this.player.y, this.player.magnetRadius);
 
             const dx = this.player.x - gem.x;
             const dy = this.player.y - gem.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < this.player.pickupRadius) {
+            if (dx * dx + dy * dy < pickupR2) {
                 gem.dead = true;
                 this.particles.xpCollect(gem.x - this.player.x + GAME.WIDTH / 2, gem.y - this.player.y + GAME.HEIGHT / 2);
                 this.sound.playXpPickup();
@@ -900,8 +901,7 @@ class Game {
 
             const dx = this.player.x - potion.x;
             const dy = this.player.y - potion.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < this.player.pickupRadius) {
+            if (dx * dx + dy * dy < pickupR2) {
                 potion.dead = true;
                 const healAmt = Math.floor(this.player.maxHp * potion.cfg.healPercent);
                 this.player.hp = Math.min(this.player.hp + healAmt, this.player.maxHp);

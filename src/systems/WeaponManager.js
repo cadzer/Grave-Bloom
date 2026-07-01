@@ -220,18 +220,13 @@ export class WeaponManager {
                 core.addColorStop(0.3, secColor);
                 core.addColorStop(1, color);
                 ctx.fillStyle = core;
-                ctx.shadowColor = color;
-                ctx.shadowBlur = 20;
                 ctx.beginPath();
                 ctx.arc(bx, by, orbR, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.shadowBlur = 0;
 
                 // Lightning crackle bolts from orb
                 ctx.strokeStyle = `rgba(255,255,255,${0.6 * pulse})`;
                 ctx.lineWidth = 1.5;
-                ctx.shadowColor = '#a0d0ff';
-                ctx.shadowBlur = 6;
                 const boltCount = 3 + r;
                 const seed = Math.floor(bx * 13.7 + by * 29.3 + r * 41);
                 for (let b = 0; b < boltCount; b++) {
@@ -249,13 +244,10 @@ export class WeaponManager {
                     }
                     ctx.stroke();
                 }
-                ctx.shadowBlur = 0;
             } else {
                 // Original thorn blade visual
                 ctx.translate(bx, by);
                 ctx.rotate(angle + Math.PI / 2);
-                ctx.shadowColor = color;
-                ctx.shadowBlur = 14;
 
                 const bladeLen = stats.size;
                 const grad = ctx.createLinearGradient(0, -bladeLen, 0, bladeLen * 0.4);
@@ -272,7 +264,6 @@ export class WeaponManager {
                 ctx.lineTo(5, -bladeLen * 0.2);
                 ctx.closePath();
                 ctx.fill();
-                ctx.shadowBlur = 0;
             }
 
             ctx.restore();
@@ -319,8 +310,6 @@ export class WeaponManager {
         ctx.save();
         ctx.strokeStyle = `${hex}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
         ctx.lineWidth = evo ? 4 : 2.5;
-        ctx.shadowColor = hex;
-        ctx.shadowBlur = (evo ? 20 : 12) * alpha;
 
         const dx = sx2 - sx1;
         const dy = sy2 - sy1;
@@ -346,7 +335,6 @@ export class WeaponManager {
         if (evo) {
             ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.5})`;
             ctx.lineWidth = 2;
-            ctx.shadowBlur = 30 * alpha;
             ctx.beginPath();
             ctx.moveTo(sx1, sy1);
             for (let i = 1; i < segments; i++) {
@@ -360,7 +348,6 @@ export class WeaponManager {
             ctx.stroke();
         }
 
-        ctx.shadowBlur = 0;
         ctx.restore();
     }
 
