@@ -294,12 +294,14 @@ export class Renderer {
     drawLight(ctx, sx, sy, radius, color, intensity) {
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
-        ctx.globalAlpha = intensity;
-        ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+        const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius);
+        grad.addColorStop(0, `rgba(${color[0]},${color[1]},${color[2]},${intensity})`);
+        grad.addColorStop(0.4, `rgba(${color[0]},${color[1]},${color[2]},${intensity * 0.4})`);
+        grad.addColorStop(1, `rgba(${color[0]},${color[1]},${color[2]},0)`);
+        ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.arc(sx, sy, radius, 0, Math.PI * 2);
         ctx.fill();
-        ctx.globalAlpha = 1;
         ctx.restore();
     }
 
