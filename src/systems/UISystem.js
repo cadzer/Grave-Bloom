@@ -131,6 +131,17 @@ export class UISystem {
         this._resetNotify = 4.5;
     }
 
+    hideResetConfirm() {
+        this._settingsResetConfirm = false;
+        this._settingsResetConfirmRects = null;
+    }
+
+    isResetConfirmButtonAt(mx, my, buttonId) {
+        if (!this._settingsResetConfirmRects || !this._settingsResetConfirmRects[buttonId]) return false;
+        const r = this._settingsResetConfirmRects[buttonId];
+        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+    }
+
     showMuteNotify(isMuted) {
         this._muteNotify = { active: true, muted: isMuted, timer: 4.0 };
     }
@@ -2083,6 +2094,101 @@ export class UISystem {
 
     showShopResetConfirm(refundAmount) { this.shopResetConfirm = { refundAmount }; }
     hideShopResetConfirm() { this.shopResetConfirm = null; }
+
+    drawSettingsResetConfirm(ctx) {
+        const W = GAME.WIDTH;
+        const H = GAME.HEIGHT;
+        const t = this.hudTimer;
+
+        ctx.fillStyle = 'rgba(0,0,0,0.65)';
+        ctx.fillRect(0, 0, W, H);
+
+        const boxW = 440;
+        const boxH = 240;
+        const boxX = (W - boxW) / 2;
+        const boxY = (H - boxH) / 2;
+
+        ctx.fillStyle = 'rgba(18,18,24,0.95)';
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxW, boxH, 20);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(196,68,68,0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxW, boxH, 20);
+        ctx.stroke();
+
+        ctx.fillStyle = '#c44444';
+        ctx.font = `bold 32px ${FD}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Reset All Progress?', W / 2, boxY + 50);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = `500 16px ${FB}`;
+        ctx.fillText('This will erase all save data,', W / 2, boxY + 90);
+        ctx.fillText('upgrades, coins, achievements, and run history.', W / 2, boxY + 112);
+
+        const btnW = 170;
+        const btnH = 48;
+        const btnGap = 24;
+        const btnY = boxY + boxH - btnH - 24;
+
+        const yesX = W / 2 - btnW - btnGap / 2;
+        const noX = W / 2 + btnGap / 2;
+
+        this._settingsResetConfirmRects = {
+            yes: { x: yesX, y: btnY, w: btnW, h: btnH },
+            no: { x: noX, y: btnY, w: btnW, h: btnH }
+        };
+
+        const yesHover = this.mouseX >= yesX && this.mouseX <= yesX + btnW &&
+                         this.mouseY >= btnY && this.mouseY <= btnY + btnH;
+        const noHover = this.mouseX >= noX && this.mouseX <= noX + btnW &&
+                        this.mouseY >= btnY && this.mouseY <= btnY + btnH;
+
+        const drawBtn = (x, y, w, h, label, color1, color2, glow, hovered) => {
+            const pulse = hovered ? 1 + Math.sin(t * 4) * 0.03 : 1;
+            ctx.save();
+            ctx.translate(x + w / 2, y + h / 2);
+            ctx.scale(pulse, pulse);
+            ctx.translate(-w / 2, -h / 2);
+
+            const grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, color1);
+            grad.addColorStop(1, color2);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.roundRect(0, 0, w, h, 14);
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(255,255,255,0.06)';
+            ctx.beginPath();
+            ctx.roundRect(2, 2, w - 4, h * 0.45, [12, 12, 0, 0]);
+            ctx.fill();
+
+            if (hovered) {
+                drawGlowBorder(ctx, -2, -2, w + 4, h + 4, 16, glow, t, 12);
+            } else {
+                ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(-1, -1, w + 2, h + 2, 15);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = hovered ? '#fff' : '#e8e4dc';
+            ctx.font = `bold 18px ${FD}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, w / 2, h / 2);
+            ctx.restore();
+        };
+
+        drawBtn(yesX, btnY, btnW, btnH, '\u2714  Reset', '#6a3030', '#4a1818', '#c44444', yesHover);
+        drawBtn(noX, btnY, btnW, btnH, '\u2716  Cancel', '#4a4a50', '#3a3a40', '#7b5ea7', noHover);
+    }
 
     drawShopResetConfirm(ctx) {
         if (!this.shopResetConfirm) return;

@@ -447,9 +447,8 @@ class Game {
                     return;
                 }
                 if (this.ui.isSettingsButtonAt(mx, my, 'reset')) {
-                    this.shopSystem.resetSave();
-                    this.ui.showResetNotify();
-                    this.ui.showSettings(this.sound);
+                    this.ui._settingsResetConfirm = true;
+                    this.gameState = 'resetconfirm';
                     return;
                 }
                 if (this.ui.isSettingsButtonAt(mx, my, 'back')) {
@@ -576,9 +575,8 @@ class Game {
                     return;
                 }
                 if (this.ui.isSettingsButtonAt(mx, my, 'reset')) {
-                    this.shopSystem.resetSave();
-                    this.ui.showResetNotify();
-                    this.ui.showSettings(this.sound);
+                    this.ui._settingsResetConfirm = true;
+                    this.gameState = 'resetconfirm';
                     return;
                 }
                 if (this.ui.isSettingsButtonAt(mx, my, 'back')) {
@@ -686,7 +684,31 @@ class Game {
                     this.ui.showPause();
                     return;
                 }
-                if (this.gameState === 'shopresetconfirm') {
+                if (this.gameState === 'resetconfirm') {
+                    this.ui.hideResetConfirm();
+                    this.gameState = 'settings';
+                    this.ui.showSettings(this.sound);
+                    return;
+                }
+            if (this.gameState === 'resetconfirm') {
+                if (this.ui.isResetConfirmButtonAt(mx, my, 'yes')) {
+                    this.shopSystem.resetSave();
+                    this.ui.hideResetConfirm();
+                    this.ui.showResetNotify();
+                    this.gameState = 'settings';
+                    this.ui.showSettings(this.sound);
+                    return;
+                }
+                if (this.ui.isResetConfirmButtonAt(mx, my, 'no')) {
+                    this.ui.hideResetConfirm();
+                    this.gameState = 'settings';
+                    this.ui.showSettings(this.sound);
+                    return;
+                }
+                return;
+            }
+
+            if (this.gameState === 'shopresetconfirm') {
                     this.ui.hideShopResetConfirm();
                     this.gameState = 'shop';
                     return;
@@ -1085,6 +1107,12 @@ class Game {
 
         if (this.gameState === 'shop') {
             this.ui.drawShop(ctx, this.shopSystem, this.sound);
+            return;
+        }
+
+        if (this.gameState === 'resetconfirm') {
+            this.ui.drawSettings(this.sound);
+            this.ui.drawSettingsResetConfirm(ctx);
             return;
         }
 
