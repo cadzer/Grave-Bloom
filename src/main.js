@@ -52,20 +52,12 @@ class Game {
         this.ui.showMenu();
 
         this.setupEvents();
-        this._restoreFullscreen();
+        this._fullscreenQueued = (localStorage.getItem('gravebloom_fullscreen') === '1');
         this.gameLoop(0);
     }
 
     _saveFullscreen() {
         try { localStorage.setItem('gravebloom_fullscreen', document.fullscreenElement ? '1' : '0'); } catch {}
-    }
-
-    _restoreFullscreen() {
-        try {
-            if (localStorage.getItem('gravebloom_fullscreen') === '1') {
-                document.documentElement.requestFullscreen().catch(() => {});
-            }
-        } catch {}
     }
 
     xpForLevel(level) {
@@ -329,6 +321,10 @@ class Game {
 
     setupEvents() {
         this.canvas.addEventListener('click', (e) => {
+            if (this._fullscreenQueued) {
+                this._fullscreenQueued = false;
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
             const rect = this.canvas.getBoundingClientRect();
             const scaleX = GAME.WIDTH / rect.width;
             const scaleY = GAME.HEIGHT / rect.height;
@@ -629,6 +625,10 @@ class Game {
         });
 
         window.addEventListener('keydown', (e) => {
+            if (this._fullscreenQueued) {
+                this._fullscreenQueued = false;
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
             if (e.code === 'Space' && this.gameState === 'chestreward') {
                 this.dismissChestReward();
                 return;
