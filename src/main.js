@@ -314,9 +314,9 @@ class Game {
                 this.renderer.shake(16, 0.5);
                 this.renderer.flashScreen(255, 200, 50, 0.4, 0.3);
                 this.renderer.hitStop(0.1);
-                this.particles.enemyDeath(bxs, bys, '#f1c40f');
                 const bxs = boss.x - this.player.x + GAME.WIDTH / 2;
                 const bys = boss.y - this.player.y + GAME.HEIGHT / 2;
+                this.particles.enemyDeath(bxs, bys, '#f1c40f');
                 this.particles.ring(bxs, bys, 100, 30, '#f1c40f', 0.6, 4);
                 this.particles.ring(bxs, bys, 60, 20, '#fff', 0.4, 3);
                 this.ui.showAnnouncement('Boss Defeated!', 'A treasure chest has appeared!');
