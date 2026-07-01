@@ -42,16 +42,22 @@ function download(url, dest) {
 }
 
 function createShortcut(targetPath, shortcutPath, iconPath, workDir) {
-    const psScript = `$w = New-Object -ComObject WScript.Shell
-$s = $w.CreateShortcut('${shortcutPath.replace(/'/g, "''")}')
-$s.TargetPath = '${targetPath.replace(/'/g, "''")}'
-$s.WorkingDirectory = '${workDir.replace(/'/g, "''")}'
-${iconPath ? `$s.IconLocation = '${iconPath.replace(/'/g, "''")}'` : ''}
-$s.Save()`;
-    const psFile = path.join(workDir, '_shortcut.ps1');
-    fs.writeFileSync(psFile, psScript, 'utf16le');
-    execSync(`powershell -ExecutionPolicy Bypass -File "${psFile}"`, { stdio: 'pipe' });
-    try { fs.unlinkSync(psFile); } catch {}
+    const dir = path.dirname(shortcutPath);
+    fs.mkdirSync(dir, { recursive: true });
+
+    const vbs = [
+        `Set o = CreateObject("WScript.Shell")`,
+        `Set s = o.CreateShortcut("${shortcutPath.replace(/"/g, '""')}")`,
+        `s.TargetPath = "${targetPath.replace(/"/g, '""')}"`,
+        `s.WorkingDirectory = "${workDir.replace(/"/g, '""')}"`,
+        iconPath ? `s.IconLocation = "${iconPath.replace(/"/g, '""')}"` : '',
+        `s.Save()`
+    ].filter(Boolean).join('\r\n');
+
+    const vbsFile = path.join(workDir, '_shortcut.vbs');
+    fs.writeFileSync(vbsFile, vbs);
+    execSync(`cscript //Nologo "${vbsFile}"`, { stdio: 'pipe' });
+    try { fs.unlinkSync(vbsFile); } catch {}
 }
 
 (async () => {
