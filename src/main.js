@@ -459,6 +459,24 @@ class Game {
                 return;
             }
 
+            if (this.gameState === 'resetconfirm') {
+                if (this.ui.isResetConfirmButtonAt(mx, my, 'yes')) {
+                    this.shopSystem.resetSave();
+                    this.ui.hideResetConfirm();
+                    this.ui.showResetNotify();
+                    this.gameState = 'settings';
+                    this.ui.showSettings(ctx, this.sound);
+                    return;
+                }
+                if (this.ui.isResetConfirmButtonAt(mx, my, 'no')) {
+                    this.ui.hideResetConfirm();
+                    this.gameState = 'settings';
+                    this.ui.showSettings(ctx, this.sound);
+                    return;
+                }
+                return;
+            }
+
             if (this.gameState === 'shopresetconfirm') {
                 if (this.ui.isShopResetConfirmButtonAt(mx, my, 'yes')) {
                     this.shopSystem.refundUpgrades();
@@ -690,25 +708,7 @@ class Game {
                     this.ui.showSettings(this.sound);
                     return;
                 }
-            if (this.gameState === 'resetconfirm') {
-                if (this.ui.isResetConfirmButtonAt(mx, my, 'yes')) {
-                    this.shopSystem.resetSave();
-                    this.ui.hideResetConfirm();
-                    this.ui.showResetNotify();
-                    this.gameState = 'settings';
-                    this.ui.showSettings(this.sound);
-                    return;
-                }
-                if (this.ui.isResetConfirmButtonAt(mx, my, 'no')) {
-                    this.ui.hideResetConfirm();
-                    this.gameState = 'settings';
-                    this.ui.showSettings(this.sound);
-                    return;
-                }
-                return;
-            }
-
-            if (this.gameState === 'shopresetconfirm') {
+                if (this.gameState === 'shopresetconfirm') {
                     this.ui.hideShopResetConfirm();
                     this.gameState = 'shop';
                     return;
