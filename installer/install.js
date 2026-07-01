@@ -41,15 +41,17 @@ function download(url, dest) {
     });
 }
 
-function createShortcut(targetPath, shortcutPath, iconPath) {
-    const ps = `New-Object -ComObject WScript.Shell | ForEach-Object {
-        $s = $_.CreateShortcut('${shortcutPath.replace(/'/g, "''")}')
-        $s.TargetPath = '${targetPath.replace(/'/g, "''")}'
-        $s.WorkingDirectory = '${path.dirname(targetPath).replace(/'/g, "''")}'
-        ${iconPath ? `$s.IconLocation = '${iconPath.replace(/'/g, "''")}'` : ''}
-        $s.Save()
-    }`;
-    execSync(`powershell -Command "${ps}"`, { stdio: 'pipe' });
+function createShortcut(targetPath, shortcutPath, iconPath, workDir) {
+    const psScript = `$w = New-Object -ComObject WScript.Shell
+$s = $w.CreateShortcut('${shortcutPath.replace(/'/g, "''")}')
+$s.TargetPath = '${targetPath.replace(/'/g, "''")}'
+$s.WorkingDirectory = '${workDir.replace(/'/g, "''")}'
+${iconPath ? `$s.IconLocation = '${iconPath.replace(/'/g, "''")}'` : ''}
+$s.Save()`;
+    const psFile = path.join(workDir, '_shortcut.ps1');
+    fs.writeFileSync(psFile, psScript, 'utf16le');
+    execSync(`powershell -ExecutionPolicy Bypass -File "${psFile}"`, { stdio: 'pipe' });
+    try { fs.unlinkSync(psFile); } catch {}
 }
 
 (async () => {
@@ -137,7 +139,7 @@ function createShortcut(targetPath, shortcutPath, iconPath) {
     try {
         const desktop = path.join(process.env.USERPROFILE || process.env.HOMEPROFILE, 'Desktop');
         const shortcutPath = path.join(desktop, `${GAME_NAME}.lnk`);
-        createShortcut(gameExe, shortcutPath, gameExe);
+        createShortcut(gameExe, shortcutPath, gameExe, installDir);
         console.log(`  Desktop shortcut created!`);
     } catch (e) {
         console.log(`  Could not create desktop shortcut: ${e.message}`);
@@ -148,7 +150,7 @@ function createShortcut(targetPath, shortcutPath, iconPath) {
         const startMenu = path.join(process.env.APPDATA, 'Microsoft', 'Windows', 'Start Menu', 'Programs', GAME_NAME);
         fs.mkdirSync(startMenu, { recursive: true });
         const shortcutPath = path.join(startMenu, `${GAME_NAME}.lnk`);
-        createShortcut(gameExe, shortcutPath, gameExe);
+        createShortcut(gameExe, shortcutPath, gameExe, installDir);
         console.log(`  Start menu shortcut created!`);
     } catch (e) {
         console.log(`  Could not create start menu shortcut: ${e.message}`);
