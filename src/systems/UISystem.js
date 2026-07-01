@@ -4101,7 +4101,7 @@ export class UISystem {
 
         const padSide = 30;
         const isMuted = sound ? sound.isMuted() : false;
-        const isFullscreen = !!document.fullscreenElement;
+        const isFullscreen = !!document.fullscreenElement || (typeof nw !== 'undefined' && nw.Window.get().isFullscreen);
         const togW = 80;
         const togH = 36;
         const circR = togH / 2 - 4;

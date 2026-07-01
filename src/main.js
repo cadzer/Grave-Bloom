@@ -57,7 +57,30 @@ class Game {
     }
 
     _saveFullscreen() {
-        try { localStorage.setItem('gravebloom_fullscreen', document.fullscreenElement ? '1' : '0'); } catch {}
+        try {
+            const isFs = !!document.fullscreenElement || (typeof nw !== 'undefined' && nw.Window.get().isFullscreen);
+            localStorage.setItem('gravebloom_fullscreen', isFs ? '1' : '0');
+        } catch {}
+    }
+
+    _enterFullscreen() {
+        try {
+            if (typeof nw !== 'undefined') {
+                nw.Window.get().enterFullscreen();
+            } else {
+                document.documentElement.requestFullscreen();
+            }
+        } catch {}
+    }
+
+    _exitFullscreen() {
+        try {
+            if (typeof nw !== 'undefined') {
+                nw.Window.get().leaveFullscreen();
+            } else if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+        } catch {}
     }
 
     xpForLevel(level) {
@@ -323,7 +346,7 @@ class Game {
         this.canvas.addEventListener('click', (e) => {
             if (this._fullscreenQueued) {
                 this._fullscreenQueued = false;
-                document.documentElement.requestFullscreen().catch(() => {});
+                this._enterFullscreen();
             }
             const rect = this.canvas.getBoundingClientRect();
             const scaleX = GAME.WIDTH / rect.width;
@@ -414,10 +437,10 @@ class Game {
                     return;
                 }
                 if (this.ui.isSettingsButtonAt(mx, my, 'fullscreen')) {
-                    if (document.fullscreenElement) {
-                        document.exitFullscreen();
+                    if (document.fullscreenElement || (typeof nw !== 'undefined' && nw.Window.get().isFullscreen)) {
+                        this._exitFullscreen();
                     } else {
-                        document.documentElement.requestFullscreen();
+                        this._enterFullscreen();
                     }
                     this._saveFullscreen();
                     this.ui.showSettings(this.sound);
@@ -543,10 +566,10 @@ class Game {
                     return;
                 }
                 if (this.ui.isSettingsButtonAt(mx, my, 'fullscreen')) {
-                    if (document.fullscreenElement) {
-                        document.exitFullscreen();
+                    if (document.fullscreenElement || (typeof nw !== 'undefined' && nw.Window.get().isFullscreen)) {
+                        this._exitFullscreen();
                     } else {
-                        document.documentElement.requestFullscreen();
+                        this._enterFullscreen();
                     }
                     this._saveFullscreen();
                     this.ui.showSettings(this.sound);
@@ -627,7 +650,7 @@ class Game {
         window.addEventListener('keydown', (e) => {
             if (this._fullscreenQueued) {
                 this._fullscreenQueued = false;
-                document.documentElement.requestFullscreen().catch(() => {});
+                this._enterFullscreen();
             }
             if (e.code === 'Space' && this.gameState === 'chestreward') {
                 this.dismissChestReward();
