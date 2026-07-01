@@ -4,4 +4,7 @@ cache/
 *.ico
 installer/node_modules/
 installer/*.exe
+installer/dist/
+installer/nsis/
+installer/_build.nsi
 _test_temp.mjs
