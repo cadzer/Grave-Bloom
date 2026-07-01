@@ -1111,7 +1111,7 @@ class Game {
         }
 
         if (this.gameState === 'resetconfirm') {
-            this.ui.drawSettings(this.sound);
+            this.ui.drawSettings(ctx, this.sound);
             this.ui.drawSettingsResetConfirm(ctx);
             return;
         }
