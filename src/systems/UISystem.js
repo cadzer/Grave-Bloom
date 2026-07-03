@@ -2764,6 +2764,93 @@ export class UISystem {
         }
     }
 
+    drawUpdatePopup(ctx, latestVersion, updateUrl) {
+        const W = GAME.WIDTH;
+        const H = GAME.HEIGHT;
+        const t = this.hudTimer;
+
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(0, 0, W, H);
+
+        const boxW = 460;
+        const boxH = 240;
+        const boxX = (W - boxW) / 2;
+        const boxY = (H - boxH) / 2;
+
+        ctx.fillStyle = 'rgba(18,18,24,0.95)';
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxW, boxH, 20);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(243,156,18,0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxW, boxH, 20);
+        ctx.stroke();
+
+        const iconPulse = 0.8 + Math.sin(t * 3) * 0.2;
+        ctx.fillStyle = `rgba(243,156,18,${iconPulse})`;
+        ctx.font = `700 36px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('\u26A0', W / 2, boxY + 40);
+
+        ctx.fillStyle = '#e8e4dc';
+        ctx.font = `700 20px ${FB}`;
+        ctx.fillText('Update Available', W / 2, boxY + 80);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = `400 15px ${FB}`;
+        ctx.fillText(`Version ${latestVersion} is now available`, W / 2, boxY + 112);
+
+        const btnW = 160;
+        const btnH = 44;
+        const btnY = boxY + boxH - 70;
+        const gap = 20;
+        const updateBtnX = W / 2 - btnW - gap / 2;
+        const cancelBtnX = W / 2 + gap / 2;
+
+        this._updatePopupUpdateBtn = { x: updateBtnX, y: btnY, w: btnW, h: btnH };
+        this._updatePopupCancelBtn = { x: cancelBtnX, y: btnY, w: btnW, h: btnH };
+
+        const mx = this._mouseX || 0;
+        const my = this._mouseY || 0;
+
+        const updateHover = mx >= updateBtnX && mx <= updateBtnX + btnW && my >= btnY && my <= btnY + btnH;
+        const cancelHover = mx >= cancelBtnX && mx <= cancelBtnX + btnW && my >= btnY && my <= btnY + btnH;
+
+        ctx.fillStyle = updateHover ? '#f39c12' : '#b8860b';
+        ctx.beginPath();
+        ctx.roundRect(updateBtnX, btnY, btnW, btnH, 10);
+        ctx.fill();
+        if (updateHover) {
+            drawGlowBorder(ctx, updateBtnX - 2, btnY - 2, btnW + 4, btnH + 4, 12, '#f39c12', t, 8);
+        }
+        ctx.fillStyle = updateHover ? '#fff' : '#e8e4dc';
+        ctx.font = `700 15px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Download', updateBtnX + btnW / 2, btnY + btnH / 2);
+
+        ctx.fillStyle = cancelHover ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)';
+        ctx.beginPath();
+        ctx.roundRect(cancelBtnX, btnY, btnW, btnH, 10);
+        ctx.fill();
+        if (cancelHover) {
+            drawGlowBorder(ctx, cancelBtnX - 2, btnY - 2, btnW + 4, btnH + 4, 12, '#666', t, 6);
+        }
+        ctx.fillStyle = cancelHover ? '#e8e4dc' : 'rgba(255,255,255,0.45)';
+        ctx.font = `500 15px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.fillText('Cancel', cancelBtnX + btnW / 2, btnY + btnH / 2);
+    }
+
+    isUpdatePopupButtonAt(mx, my, id) {
+        const btn = id === 'update' ? this._updatePopupUpdateBtn : this._updatePopupCancelBtn;
+        if (!btn) return false;
+        return mx >= btn.x && mx <= btn.x + btn.w && my >= btn.y && my <= btn.y + btn.h;
+    }
+
     drawDebugPassword(ctx, input, wrong) {
         const W = GAME.WIDTH;
         const H = GAME.HEIGHT;

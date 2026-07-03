@@ -38,7 +38,11 @@ class Game {
         this.runHistory = new RunHistorySystem();
         this.ambient = new AmbientSystem();
         this.updateChecker = new UpdateChecker();
-        this.updateChecker.checkForUpdates();
+        this.updateChecker.checkForUpdates().then(() => {
+            if (this.updateChecker.updateAvailable && this.gameState === 'menu') {
+                this._showUpdatePopup = true;
+            }
+        });
 
         this.fps = 0;
         this.frameCount = 0;
@@ -402,6 +406,18 @@ class Game {
                     }
                     return;
                 }
+                if (this._showUpdatePopup) {
+                    if (this.ui.isUpdatePopupButtonAt(mx, my, 'update')) {
+                        window.open(this.updateChecker.updateUrl, '_blank');
+                        this._showUpdatePopup = false;
+                        return;
+                    }
+                    if (this.ui.isUpdatePopupButtonAt(mx, my, 'cancel')) {
+                        this._showUpdatePopup = false;
+                        return;
+                    }
+                    return;
+                }
                 return;
             }
 
@@ -728,6 +744,10 @@ class Game {
             }
 
             if (e.code === 'Escape') {
+                if (this.gameState === 'menu' && this._showUpdatePopup) {
+                    this._showUpdatePopup = false;
+                    return;
+                }
                 if (this.gameState === 'playing') {
                     this.gameState = 'paused';
                     this.ui.showPause();
@@ -1139,6 +1159,9 @@ class Game {
 
         if (this.gameState === 'menu') {
             this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker);
+            if (this._showUpdatePopup) {
+                this.ui.drawUpdatePopup(ctx, this.updateChecker.latestVersion, this.updateChecker.updateUrl);
+            }
             return;
         }
 
