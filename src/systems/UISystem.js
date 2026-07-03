@@ -2764,7 +2764,7 @@ export class UISystem {
         }
     }
 
-    drawDebugPassword(ctx, input) {
+    drawDebugPassword(ctx, input, wrong) {
         const W = GAME.WIDTH;
         const H = GAME.HEIGHT;
         const t = this.hudTimer;
@@ -2823,6 +2823,13 @@ export class UISystem {
         ctx.font = `400 13px ${FB}`;
         ctx.textAlign = 'center';
         ctx.fillText('Press Enter to confirm  \u2022  Esc to cancel', W / 2, boxY + boxH - 24);
+
+        if (wrong) {
+            ctx.fillStyle = '#e85050';
+            ctx.font = `700 15px ${FB}`;
+            ctx.textAlign = 'center';
+            ctx.fillText('Wrong password', W / 2, inputY + inputH + 22);
+        }
     }
 
     _drawMenuButton(ctx, bx, by, bw, bh, btn, t, primary) {

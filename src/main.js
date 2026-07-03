@@ -74,7 +74,7 @@ class Game {
         h ^= h >>> 13;
         h = Math.imul(h, 0xc2b2ae35);
         h ^= h >>> 16;
-        return h.toString(16).padStart(8, '0');
+        return (h >>> 0).toString(16).padStart(8, '0');
     }
 
     _enterFullscreen() {
@@ -697,9 +697,12 @@ class Game {
                     const hash = this._hashString(this._debugPasswordInput);
                     if (hash === 'fcfc4b09') {
                         this.debug = true;
+                        this.gameState = 'menu';
+                        this.ui.showMenu();
+                    } else {
+                        this._debugPasswordWrongTimer = 2.0;
+                        this._debugPasswordInput = '';
                     }
-                    this.gameState = 'menu';
-                    this.ui.showMenu();
                     return;
                 }
                 if (e.code === 'Backspace') {
@@ -707,6 +710,7 @@ class Game {
                     return;
                 }
                 if (e.key.length === 1) {
+                    this._debugPasswordWrongTimer = 0;
                     this._debugPasswordInput += e.key;
                     return;
                 }
@@ -865,6 +869,10 @@ class Game {
         const hitStopped = this.renderer.updateShake(dt);
         this.ui.updateAnnouncement(dt);
         this.sound.updateKillStreak(dt);
+
+        if (this._debugPasswordWrongTimer > 0) {
+            this._debugPasswordWrongTimer -= dt;
+        }
 
         if (hitStopped) {
             this.particles.update(dt * 0.2);
@@ -1136,7 +1144,7 @@ class Game {
 
         if (this.gameState === 'debugpassword') {
             this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker);
-            this.ui.drawDebugPassword(ctx, this._debugPasswordInput);
+            this.ui.drawDebugPassword(ctx, this._debugPasswordInput, this._debugPasswordWrongTimer > 0);
             return;
         }
 
