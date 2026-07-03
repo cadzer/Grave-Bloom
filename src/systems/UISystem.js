@@ -2962,11 +2962,25 @@ export class UISystem {
                         this.mouseX >= bx && this.mouseX <= bx + bw &&
                         this.mouseY >= by && this.mouseY <= by + bh;
         const pulse = hovered ? 1 + Math.sin(t * 4) * 0.02 : 1;
+        const isBegin = btn.id === 'begin';
 
         ctx.save();
         ctx.translate(bx + bw / 2, by + bh / 2);
         ctx.scale(pulse, pulse);
         ctx.translate(-bw / 2, -bh / 2);
+
+        // Outer glow aura for Begin button
+        if (hovered && isBegin) {
+            const auraPulse = 0.3 + Math.sin(t * 3) * 0.15;
+            const auraGrad = ctx.createRadialGradient(bw / 2, bh / 2, bh * 0.3, bw / 2, bh / 2, bh * 1.4);
+            auraGrad.addColorStop(0, `rgba(124,154,110,${auraPulse})`);
+            auraGrad.addColorStop(0.5, `rgba(184,217,78,${auraPulse * 0.5})`);
+            auraGrad.addColorStop(1, 'rgba(184,217,78,0)');
+            ctx.fillStyle = auraGrad;
+            ctx.beginPath();
+            ctx.ellipse(bw / 2, bh / 2, bw * 0.75, bh * 1.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // Button background
         const grad = ctx.createLinearGradient(0, 0, 0, bh);
@@ -2977,6 +2991,19 @@ export class UISystem {
         ctx.roundRect(0, 0, bw, bh, primary ? 14 : 10);
         ctx.fill();
 
+        // Shimmer sweep for Begin button
+        if (hovered && isBegin) {
+            const shimmerX = ((t * 180) % (bw + 160)) - 80;
+            const shimmerGrad = ctx.createLinearGradient(shimmerX - 40, 0, shimmerX + 40, 0);
+            shimmerGrad.addColorStop(0, 'rgba(255,255,255,0)');
+            shimmerGrad.addColorStop(0.5, 'rgba(255,255,255,0.12)');
+            shimmerGrad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = shimmerGrad;
+            ctx.beginPath();
+            ctx.roundRect(0, 0, bw, bh, primary ? 14 : 10);
+            ctx.fill();
+        }
+
         // Top highlight
         ctx.fillStyle = 'rgba(255,255,255,0.07)';
         ctx.beginPath();
@@ -2984,7 +3011,15 @@ export class UISystem {
         ctx.fill();
 
         // Border
-        if (hovered) {
+        if (hovered && isBegin) {
+            drawGlowBorder(ctx, -4, -4, bw + 8, bh + 8, 18, '#b8d94e', t, 16);
+            drawGlowBorder(ctx, -2, -2, bw + 4, bh + 4, 16, '#7c9a6e', t, 12);
+            ctx.strokeStyle = '#c8e87a';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(-1, -1, bw + 2, bh + 2, 14);
+            ctx.stroke();
+        } else if (hovered) {
             drawGlowBorder(ctx, -2, -2, bw + 4, bh + 4, primary ? 16 : 12, btn.glow, t, 12);
         } else {
             ctx.strokeStyle = 'rgba(255,255,255,0.08)';
@@ -2995,8 +3030,8 @@ export class UISystem {
         }
 
         // Text
-        ctx.shadowColor = '#000';
-        ctx.shadowBlur = primary ? 6 : 3;
+        ctx.shadowColor = hovered && isBegin ? '#7c9a6e' : '#000';
+        ctx.shadowBlur = hovered && isBegin ? 14 : (primary ? 6 : 3);
         ctx.fillStyle = hovered ? '#fff' : (primary ? '#f0ece4' : '#d8d4cc');
         ctx.font = `${primary ? 'bold' : '600'} ${primary ? 24 : 17}px ${FD}`;
         ctx.textAlign = 'center';
@@ -3005,6 +3040,35 @@ export class UISystem {
         ctx.shadowBlur = 0;
 
         ctx.restore();
+
+        // Floating particles around Begin button
+        if (hovered && isBegin) {
+            const pcx = bx + bw / 2;
+            const pcy = by + bh / 2;
+            for (let i = 0; i < 6; i++) {
+                const angle = t * 1.5 + (i / 6) * Math.PI * 2;
+                const radius = 70 + Math.sin(t * 2 + i) * 20;
+                const px = pcx + Math.cos(angle) * radius;
+                const py = pcy + Math.sin(angle) * (radius * 0.5);
+                const alpha = 0.3 + Math.sin(t * 3 + i * 1.5) * 0.25;
+                const size = 2 + Math.sin(t * 4 + i) * 1;
+                ctx.fillStyle = `rgba(184,217,78,${alpha})`;
+                ctx.beginPath();
+                ctx.arc(px, py, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            // Sparkle dots at edges
+            for (let i = 0; i < 4; i++) {
+                const phase = t * 5 + i * 1.7;
+                const sparkleAlpha = Math.max(0, Math.sin(phase));
+                const sx = bx + (i % 2 === 0 ? -8 : bw + 8);
+                const sy = by + (i < 2 ? -8 : bh + 8);
+                ctx.fillStyle = `rgba(200,232,122,${sparkleAlpha * 0.7})`;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
 
         this._menuRects[btn.id] = { x: bx, y: by, w: bw, h: bh };
     }
