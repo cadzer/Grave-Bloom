@@ -2703,52 +2703,49 @@ export class UISystem {
         ctx.stroke();
         drawDiamond(ctx, W / 2, divY, 4, '#b8d94e', 0.5);
 
-        // --- Button layout: two columns + bottom row ---
+        // --- Button layout ---
         this._menuRects = {};
 
+        const beginBtn = { id: 'begin', label: '\u2728  Begin Bloom', color1: '#7c9a6e', color2: '#4a6e3a', glow: '#7c9a6e' };
         const leftBtns = [
-            { id: 'begin', label: '\u2728  Begin Bloom', color1: '#7c9a6e', color2: '#4a6e3a', glow: '#7c9a6e' },
             { id: 'shop', label: '\uD83C\uDF3F  Bloomkeeper\'s Sanctum', color1: '#5a8f7c', color2: '#3d6b52', glow: '#5a8f7c' },
-        ];
-
-        const rightBtns = [
-            { id: 'tutorial', label: '\uD83D\uDCD6  Tutorial', color1: '#5a6f8c', color2: '#3d5270', glow: '#5a8fcf' },
             { id: 'settings', label: '\u2699\uFE0F  Settings', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' },
         ];
-
+        const rightBtns = [
+            { id: 'tutorial', label: '\uD83D\uDCD6  Tutorial', color1: '#5a6f8c', color2: '#3d5270', glow: '#5a8fcf' },
+        ];
         const bottomBtns = [
             { id: 'debug', label: debug ? '\u2705  Debug: ON' : '\u26AA  Debug: OFF', color1: debug ? '#3a5a3a' : '#2a2a30', color2: debug ? '#2a4a2a' : '#1a1a22', glow: debug ? '#4caf50' : '#666' },
             { id: 'exit', label: '\uD83D\uDEAA  Exit', color1: '#3a2a30', color2: '#2a1a22', glow: '#8b3a62' },
         ];
 
-        const colBtnW = 340;
-        const colBtnH = 62;
-        const colGap = 40;
-        const btnGap = 16;
+        const beginW = 400;
+        const beginH = 72;
+        const colBtnW = 300;
+        const leftBtnH1 = 80;
+        const leftBtnH2 = 48;
+        const rightBtnH = leftBtnH1 + leftBtnH2 + 14;
+        const colGap = 30;
+        const btnGap = 14;
 
-        const totalW = colBtnW * 2 + colGap;
-        const colStartX = (W - totalW) / 2;
+        const topMargin = divY + 24;
+        const beginX = (W - beginW) / 2;
+        const beginY = topMargin;
+
+        this._drawMenuButton(ctx, beginX, beginY, beginW, beginH, beginBtn, t, true);
+
+        const colTop = beginY + beginH + 20;
+        const totalColW = colBtnW * 2 + colGap;
+        const colStartX = (W - totalColW) / 2;
         const leftColX = colStartX;
         const rightColX = colStartX + colBtnW + colGap;
 
-        const topMargin = divY + 30;
-        const bottomMargin = H - 100;
-        const availH = bottomMargin - topMargin;
+        this._drawMenuButton(ctx, leftColX, colTop, colBtnW, leftBtnH1, leftBtns[0], t, true);
+        this._drawMenuButton(ctx, leftColX, colTop + leftBtnH1 + btnGap, colBtnW, leftBtnH2, leftBtns[1], t, false);
 
-        const colTotalH = leftBtns.length * colBtnH + (leftBtns.length - 1) * btnGap;
-        const colStartY = topMargin + (availH - colTotalH) / 2;
+        this._drawMenuButton(ctx, rightColX, colTop, colBtnW, rightBtnH, rightBtns[0], t, true);
 
-        for (let i = 0; i < leftBtns.length; i++) {
-            const btn = leftBtns[i];
-            this._drawMenuButton(ctx, leftColX, colStartY + i * (colBtnH + btnGap), colBtnW, colBtnH, btn, t, true);
-        }
-
-        for (let i = 0; i < rightBtns.length; i++) {
-            const btn = rightBtns[i];
-            this._drawMenuButton(ctx, rightColX, colStartY + i * (colBtnH + btnGap), colBtnW, colBtnH, btn, t, true);
-        }
-
-        const bottomY = colStartY + colTotalH + 30;
+        const bottomY = colTop + rightBtnH + 24;
         const bottomGap = 20;
         const bottomBtnH = 38;
 
