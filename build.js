@@ -88,7 +88,7 @@ async function download(url, dest) {
                 fullscreen: false,
                 position: 'center'
             },
-            'chromium-args': '--disable-gpu-compositing'
+            'chromium-args': '--enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist'
         };
         fs.writeFileSync(
             path.join(runtimeDir, 'package.json'),
