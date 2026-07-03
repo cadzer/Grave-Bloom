@@ -2620,16 +2620,15 @@ export class UISystem {
         // --- Title block ---
         const titleY = H * 0.22;
         const logo = this.menuBg.logoImage;
+        let divY;
 
         if (logo) {
-            // Draw logo image centered
             const logoScale = 0.35;
             const logoW = logo.width * logoScale;
             const logoH = logo.height * logoScale;
             const logoX = (W - logoW) / 2;
             const logoY = titleY - logoH / 2;
 
-            // Glow behind logo
             ctx.save();
             const glowPulse = 0.4 + Math.sin(t * 0.8) * 0.1;
             ctx.shadowColor = '#9a6ec8';
@@ -2637,10 +2636,18 @@ export class UISystem {
             ctx.drawImage(logo, logoX, logoY, logoW, logoH);
             ctx.restore();
 
-            // Logo on top (no shadow)
             ctx.drawImage(logo, logoX, logoY, logoW, logoH);
+
+            const subY = logoY + logoH + 16;
+            const subAlpha = 0.35 + Math.sin(t * 1.2) * 0.1;
+            ctx.fillStyle = `rgba(184,217,78,${subAlpha})`;
+            ctx.font = `italic 500 18px ${FB}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText('Tend the garden. Hold back the Blight.', W / 2, subY);
+
+            divY = subY + 30;
         } else {
-            // Fallback: text title
             ctx.save();
             const glowPulse = 0.6 + Math.sin(t * 0.8) * 0.15;
             ctx.shadowColor = '#7c9a6e';
@@ -2668,18 +2675,18 @@ export class UISystem {
             ctx.textBaseline = 'middle';
             ctx.fillText('GRAVE BLOOM', W / 2, titleY);
             ctx.restore();
+
+            const subAlpha = 0.35 + Math.sin(t * 1.2) * 0.1;
+            ctx.fillStyle = `rgba(184,217,78,${subAlpha})`;
+            ctx.font = `italic 500 18px ${FB}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText('Tend the garden. Hold back the Blight.', W / 2, titleY + 52);
+
+            divY = titleY + 88;
         }
 
-        // Subtitle
-        const subAlpha = 0.35 + Math.sin(t * 1.2) * 0.1;
-        ctx.fillStyle = `rgba(184,217,78,${subAlpha})`;
-        ctx.font = `italic 500 18px ${FB}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillText('Tend the garden. Hold back the Blight.', W / 2, titleY + 52);
-
         // Decorative divider
-        const divY = titleY + 88;
         const divLen = 220;
         const divGrad = ctx.createLinearGradient(W / 2 - divLen, 0, W / 2 + divLen, 0);
         divGrad.addColorStop(0, 'rgba(184,217,78,0)');
