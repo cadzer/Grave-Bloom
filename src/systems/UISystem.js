@@ -2841,6 +2841,17 @@ export class UISystem {
         ctx.fill();
         if (updateHover) {
             drawGlowBorder(ctx, updateBtnX - 2, btnY - 2, btnW + 4, btnH + 4, 12, '#f39c12', t, 8);
+            ctx.strokeStyle = '#f39c12';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(updateBtnX - 1, btnY - 1, btnW + 2, btnH + 2, 10);
+            ctx.stroke();
+        } else {
+            ctx.strokeStyle = 'rgba(243,156,18,0.25)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(updateBtnX - 1, btnY - 1, btnW + 2, btnH + 2, 10);
+            ctx.stroke();
         }
         ctx.fillStyle = updateHover ? '#fff' : '#e8e4dc';
         ctx.font = `700 15px ${FB}`;
@@ -2853,7 +2864,18 @@ export class UISystem {
         ctx.roundRect(cancelBtnX, btnY, btnW, btnH, 10);
         ctx.fill();
         if (cancelHover) {
-            drawGlowBorder(ctx, cancelBtnX - 2, btnY - 2, btnW + 4, btnH + 4, 12, '#666', t, 6);
+            drawGlowBorder(ctx, cancelBtnX - 2, btnY - 2, btnW + 4, btnH + 4, 12, '#999', t, 6);
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(cancelBtnX - 1, btnY - 1, btnW + 2, btnH + 2, 10);
+            ctx.stroke();
+        } else {
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(cancelBtnX - 1, btnY - 1, btnW + 2, btnH + 2, 10);
+            ctx.stroke();
         }
         ctx.fillStyle = cancelHover ? '#e8e4dc' : 'rgba(255,255,255,0.45)';
         ctx.font = `500 15px ${FB}`;
