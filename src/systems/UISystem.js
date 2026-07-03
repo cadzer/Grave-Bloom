@@ -2829,8 +2829,8 @@ export class UISystem {
         this._updatePopupUpdateBtn = { x: updateBtnX, y: btnY, w: btnW, h: btnH };
         this._updatePopupCancelBtn = { x: cancelBtnX, y: btnY, w: btnW, h: btnH };
 
-        const mx = this._mouseX || 0;
-        const my = this._mouseY || 0;
+        const mx = this.mouseX;
+        const my = this.mouseY;
 
         const updateHover = mx >= updateBtnX && mx <= updateBtnX + btnW && my >= btnY && my <= btnY + btnH;
         const cancelHover = mx >= cancelBtnX && mx <= cancelBtnX + btnW && my >= btnY && my <= btnY + btnH;
