@@ -2724,9 +2724,9 @@ export class UISystem {
         const beginH = 72;
         const colBtnW = 300;
         const leftBtnH = 52;
-        const rightBtnH = leftBtns.length * leftBtnH + (leftBtns.length - 1) * btnGap;
         const colGap = 30;
         const btnGap = 12;
+        const rightBtnH = leftBtns.length * leftBtnH + (leftBtns.length - 1) * btnGap;
 
         const topMargin = divY + 24;
         const beginX = (W - beginW) / 2;
