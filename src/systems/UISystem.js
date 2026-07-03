@@ -3391,6 +3391,8 @@ export class UISystem {
 
     drawLoadoutSelect(ctx, selectedLoadout, shopSystem) {
         this._loadoutRects = [];
+        this.hudTimer += 0.016;
+        const t = this.hudTimer;
         ctx.fillStyle = '#141416';
         ctx.fillRect(0, 0, GAME.WIDTH, GAME.HEIGHT);
 
