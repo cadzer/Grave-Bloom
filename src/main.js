@@ -496,6 +496,7 @@ class Game {
             if (this.gameState === 'resetconfirm') {
                 if (this.ui.isResetConfirmButtonAt(mx, my, 'yes')) {
                     this.shopSystem.resetSave();
+                    this.selectedLoadout = 'default';
                     this.ui.hideResetConfirm();
                     this.ui.showResetNotify();
                     this.gameState = 'settings';
