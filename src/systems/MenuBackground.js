@@ -69,6 +69,10 @@ export class MenuBackground {
             ctx.fillRect(0, 0, W, H);
         }
 
+        // Darken overlay
+        ctx.fillStyle = 'rgba(10,8,20,0.3)';
+        ctx.fillRect(0, 0, W, H);
+
         this._drawVignette(ctx);
         this._drawGrain(ctx);
 
@@ -76,10 +80,11 @@ export class MenuBackground {
     }
 
     _drawVignette(ctx) {
-        const vigGrad = ctx.createRadialGradient(W / 2, H / 2, W * 0.25, W / 2, H / 2, W * 0.75);
+        const vigGrad = ctx.createRadialGradient(W / 2, H / 2, W * 0.2, W / 2, H / 2, W * 0.7);
         vigGrad.addColorStop(0, 'rgba(0,0,0,0)');
-        vigGrad.addColorStop(0.7, 'rgba(0,0,0,0.2)');
-        vigGrad.addColorStop(1, 'rgba(0,0,0,0.6)');
+        vigGrad.addColorStop(0.5, 'rgba(0,0,0,0.15)');
+        vigGrad.addColorStop(0.8, 'rgba(0,0,0,0.45)');
+        vigGrad.addColorStop(1, 'rgba(0,0,0,0.75)');
         ctx.fillStyle = vigGrad;
         ctx.fillRect(0, 0, W, H);
     }
