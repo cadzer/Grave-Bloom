@@ -4,7 +4,7 @@
 
 ### Tend the garden. Hold back the Blight.
 
-![Screenshot](screenshot.png)
+![Screenshot](https://i.imgur.com/6NbCqck.png)
 
 [![Download](https://img.shields.io/badge/Download-GraveBloom--Setup.exe-brightgreen?style=for-the-badge&logo=windows)](https://github.com/cadzer/Grave-Bloom/releases/latest)
 ![Version](https://img.shields.io/badge/version-1.2.0-blue?style=for-the-badge)
