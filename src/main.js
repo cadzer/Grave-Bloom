@@ -373,6 +373,18 @@ class Game {
             const my = (e.clientY - rect.top) * scaleY;
 
             if (this.gameState === 'menu') {
+                if (this._showUpdatePopup) {
+                    if (this.ui.isUpdatePopupButtonAt(mx, my, 'update')) {
+                        window.open(this.updateChecker.updateUrl, '_blank');
+                        this._showUpdatePopup = false;
+                        return;
+                    }
+                    if (this.ui.isUpdatePopupButtonAt(mx, my, 'cancel')) {
+                        this._showUpdatePopup = false;
+                        return;
+                    }
+                    return;
+                }
                 if (this.ui.isMenuButtonAt(mx, my, 'begin')) {
                     this.gameState = 'charselect';
                     this.ui.showCharacters();
@@ -403,18 +415,6 @@ class Game {
                     } else {
                         this.gameState = 'debugpassword';
                         this._debugPasswordInput = '';
-                    }
-                    return;
-                }
-                if (this._showUpdatePopup) {
-                    if (this.ui.isUpdatePopupButtonAt(mx, my, 'update')) {
-                        window.open(this.updateChecker.updateUrl, '_blank');
-                        this._showUpdatePopup = false;
-                        return;
-                    }
-                    if (this.ui.isUpdatePopupButtonAt(mx, my, 'cancel')) {
-                        this._showUpdatePopup = false;
-                        return;
                     }
                     return;
                 }
