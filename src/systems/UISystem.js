@@ -2764,6 +2764,67 @@ export class UISystem {
         }
     }
 
+    drawDebugPassword(ctx, input) {
+        const W = GAME.WIDTH;
+        const H = GAME.HEIGHT;
+        const t = this.hudTimer;
+
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 0, W, H);
+
+        const boxW = 400;
+        const boxH = 200;
+        const boxX = (W - boxW) / 2;
+        const boxY = (H - boxH) / 2;
+
+        ctx.fillStyle = 'rgba(18,18,24,0.95)';
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxW, boxH, 20);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxW, boxH, 20);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = `500 16px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Enter access code:', W / 2, boxY + 40);
+
+        const inputW = 300;
+        const inputH = 44;
+        const inputX = (W - inputW) / 2;
+        const inputY = boxY + 60;
+
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.beginPath();
+        ctx.roundRect(inputX, inputY, inputW, inputH, 8);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(124,154,110,0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(inputX, inputY, inputW, inputH, 8);
+        ctx.stroke();
+
+        const displayText = input.length > 0 ? '\u2022'.repeat(input.length) : '';
+        const cursor = Math.sin(t * 4) > 0 ? '|' : '';
+
+        ctx.fillStyle = input.length > 0 ? '#e8e4dc' : 'rgba(255,255,255,0.25)';
+        ctx.font = `400 18px ${FB}`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(displayText + cursor, inputX + 14, inputY + inputH / 2);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.font = `400 13px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.fillText('Press Enter to confirm  \u2022  Esc to cancel', W / 2, boxY + boxH - 24);
+    }
+
     _drawMenuButton(ctx, bx, by, bw, bh, btn, t, primary) {
         const hovered = this.mouseX >= bx && this.mouseX <= bx + bw &&
                         this.mouseY >= by && this.mouseY <= by + bh;

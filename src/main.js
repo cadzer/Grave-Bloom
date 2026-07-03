@@ -63,6 +63,20 @@ class Game {
         } catch {}
     }
 
+    _hashString(str) {
+        let h = 0x811c9dc5;
+        for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 0x01000193);
+        }
+        h ^= str.length;
+        h = Math.imul(h, 0x85ebca6b);
+        h ^= h >>> 13;
+        h = Math.imul(h, 0xc2b2ae35);
+        h ^= h >>> 16;
+        return h.toString(16).padStart(8, '0');
+    }
+
     _enterFullscreen() {
         try {
             if (typeof nw !== 'undefined') {
@@ -380,7 +394,12 @@ class Game {
                     return;
                 }
                 if (this.ui.isMenuButtonAt(mx, my, 'debug')) {
-                    this.debug = !this.debug;
+                    if (this.debug) {
+                        this.debug = false;
+                    } else {
+                        this.gameState = 'debugpassword';
+                        this._debugPasswordInput = '';
+                    }
                     return;
                 }
                 return;
@@ -667,6 +686,31 @@ class Game {
             if (this._fullscreenQueued) {
                 this._fullscreenQueued = false;
                 this._enterFullscreen();
+            }
+            if (this.gameState === 'debugpassword') {
+                if (e.code === 'Escape') {
+                    this.gameState = 'menu';
+                    this.ui.showMenu();
+                    return;
+                }
+                if (e.code === 'Enter') {
+                    const hash = this._hashString(this._debugPasswordInput);
+                    if (hash === 'fcfc4b09') {
+                        this.debug = true;
+                    }
+                    this.gameState = 'menu';
+                    this.ui.showMenu();
+                    return;
+                }
+                if (e.code === 'Backspace') {
+                    this._debugPasswordInput = this._debugPasswordInput.slice(0, -1);
+                    return;
+                }
+                if (e.key.length === 1) {
+                    this._debugPasswordInput += e.key;
+                    return;
+                }
+                return;
             }
             if (e.code === 'Space' && this.gameState === 'chestreward') {
                 this.dismissChestReward();
@@ -1087,6 +1131,12 @@ class Game {
 
         if (this.gameState === 'menu') {
             this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker);
+            return;
+        }
+
+        if (this.gameState === 'debugpassword') {
+            this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker);
+            this.ui.drawDebugPassword(ctx, this._debugPasswordInput);
             return;
         }
 
