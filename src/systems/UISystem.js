@@ -2706,47 +2706,46 @@ export class UISystem {
         // --- Button layout ---
         this._menuRects = {};
 
-        const beginBtn = { id: 'begin', label: '\u2728  Begin Bloom', color1: '#7c9a6e', color2: '#4a6e3a', glow: '#7c9a6e' };
         const leftBtns = [
+            { id: 'begin', label: '\u2728  Begin Bloom', color1: '#7c9a6e', color2: '#4a6e3a', glow: '#7c9a6e' },
             { id: 'shop', label: '\uD83C\uDF3F  Bloomkeeper\'s Sanctum', color1: '#5a8f7c', color2: '#3d6b52', glow: '#5a8f7c' },
-            { id: 'achievements', label: '\uD83C\uDFC6  Achievements', color1: '#6a5a3a', color2: '#4a3a22', glow: '#c4a23a' },
-            { id: 'settings', label: '\u2699\uFE0F  Settings', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' },
         ];
         const rightBtns = [
+            { id: 'achievements', label: '\uD83C\uDFC6  Achievements', color1: '#6a5a3a', color2: '#4a3a22', glow: '#c4a23a' },
             { id: 'tutorial', label: '\uD83D\uDCD6  Tutorial', color1: '#5a6f8c', color2: '#3d5270', glow: '#5a8fcf' },
+            { id: 'settings', label: '\u2699\uFE0F  Settings', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' },
         ];
         const bottomBtns = [
             { id: 'debug', label: debug ? '\u2705  Debug: ON' : '\u26AA  Debug: OFF', color1: debug ? '#3a5a3a' : '#2a2a30', color2: debug ? '#2a4a2a' : '#1a1a22', glow: debug ? '#4caf50' : '#666' },
             { id: 'exit', label: '\uD83D\uDEAA  Exit', color1: '#3a2a30', color2: '#2a1a22', glow: '#8b3a62' },
         ];
 
-        const beginW = 400;
-        const beginH = 72;
-        const colBtnW = 300;
-        const leftBtnH = 52;
+        const colBtnW = 320;
+        const leftBtnH1 = 80;
+        const leftBtnH2 = 48;
+        const rightBtnH = 52;
         const colGap = 30;
-        const btnGap = 12;
-        const rightBtnH = leftBtns.length * leftBtnH + (leftBtns.length - 1) * btnGap;
+        const btnGap = 14;
+
+        const leftColH = leftBtnH1 + leftBtnH2 + btnGap;
+        const rightColH = rightBtns.length * rightBtnH + (rightBtns.length - 1) * btnGap;
+        const maxColH = Math.max(leftColH, rightColH);
 
         const topMargin = divY + 24;
-        const beginX = (W - beginW) / 2;
-        const beginY = topMargin;
-
-        this._drawMenuButton(ctx, beginX, beginY, beginW, beginH, beginBtn, t, true);
-
-        const colTop = beginY + beginH + 20;
         const totalColW = colBtnW * 2 + colGap;
         const colStartX = (W - totalColW) / 2;
         const leftColX = colStartX;
         const rightColX = colStartX + colBtnW + colGap;
+        const colTop = topMargin;
 
-        this._drawMenuButton(ctx, leftColX, colTop, colBtnW, leftBtnH, leftBtns[0], t, true);
-        this._drawMenuButton(ctx, leftColX, colTop + leftBtnH + btnGap, colBtnW, leftBtnH, leftBtns[1], t, false);
-        this._drawMenuButton(ctx, leftColX, colTop + (leftBtnH + btnGap) * 2, colBtnW, leftBtnH, leftBtns[2], t, false);
+        this._drawMenuButton(ctx, leftColX, colTop, colBtnW, leftBtnH1, leftBtns[0], t, true);
+        this._drawMenuButton(ctx, leftColX, colTop + leftBtnH1 + btnGap, colBtnW, leftBtnH2, leftBtns[1], t, false);
 
-        this._drawMenuButton(ctx, rightColX, colTop, colBtnW, rightBtnH, rightBtns[0], t, true);
+        for (let i = 0; i < rightBtns.length; i++) {
+            this._drawMenuButton(ctx, rightColX, colTop + i * (rightBtnH + btnGap), colBtnW, rightBtnH, rightBtns[i], t, false);
+        }
 
-        const bottomY = colTop + rightBtnH + 24;
+        const bottomY = colTop + maxColH + 24;
         const bottomGap = 20;
         const bottomBtnH = 38;
 
@@ -4562,6 +4561,88 @@ export class UISystem {
         const backBtn = { id: 'back', label: '\u2190  Back', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' };
         this._drawMenuButton(ctx, backBtnX, backBtnY, backBtnW, backBtnH, backBtn, t, false);
         this._achievRects['back'] = { x: backBtnX, y: backBtnY, w: backBtnW, h: backBtnH };
+    }
+
+    // --- Exit Confirmation ---
+
+    drawExitConfirm(ctx) {
+        const t = this.hudTimer;
+        const W = GAME.WIDTH;
+        const H = GAME.HEIGHT;
+        this._exitConfirmRects = {};
+
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(0, 0, W, H);
+
+        const boxW = 380;
+        const boxH = 180;
+        const boxX = (W - boxW) / 2;
+        const boxY = (H - boxH) / 2;
+
+        ctx.fillStyle = 'rgba(18,18,24,0.95)';
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxW, boxH, 16);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(139,58,98,0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxW, boxH, 16);
+        ctx.stroke();
+
+        ctx.fillStyle = '#e8e4dc';
+        ctx.font = `700 18px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Quit Grave Bloom?', W / 2, boxY + 40);
+
+        ctx.fillStyle = 'rgba(232,228,220,0.4)';
+        ctx.font = `400 13px ${FB}`;
+        ctx.fillText('Any unsaved progress will be lost.', W / 2, boxY + 68);
+
+        const btnW = 140;
+        const btnH = 40;
+        const btnY = boxY + boxH - 60;
+        const gap = 20;
+        const yesX = W / 2 - btnW - gap / 2;
+        const noX = W / 2 + gap / 2;
+
+        const yesHover = this.mouseX >= yesX && this.mouseX <= yesX + btnW &&
+                         this.mouseY >= btnY && this.mouseY <= btnY + btnH;
+        const noHover = this.mouseX >= noX && this.mouseX <= noX + btnW &&
+                        this.mouseY >= btnY && this.mouseY <= btnY + btnH;
+
+        ctx.fillStyle = yesHover ? '#8b3a62' : '#6a2a4a';
+        ctx.beginPath();
+        ctx.roundRect(yesX, btnY, btnW, btnH, 10);
+        ctx.fill();
+        if (yesHover) drawGlowBorder(ctx, yesX - 2, btnY - 2, btnW + 4, btnH + 4, 12, '#8b3a62', t, 8);
+        ctx.fillStyle = yesHover ? '#fff' : '#e8e4dc';
+        ctx.font = `700 14px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Exit', yesX + btnW / 2, btnY + btnH / 2);
+
+        ctx.fillStyle = noHover ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)';
+        ctx.beginPath();
+        ctx.roundRect(noX, btnY, btnW, btnH, 10);
+        ctx.fill();
+        if (noHover) drawGlowBorder(ctx, noX - 2, btnY - 2, btnW + 4, btnH + 4, 12, '#666', t, 6);
+        ctx.fillStyle = noHover ? '#e8e4dc' : 'rgba(255,255,255,0.45)';
+        ctx.font = `500 14px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.fillText('Cancel', noX + btnW / 2, btnY + btnH / 2);
+
+        this._exitConfirmRects = {
+            yes: { x: yesX, y: btnY, w: btnW, h: btnH },
+            no: { x: noX, y: btnY, w: btnW, h: btnH }
+        };
+    }
+
+    isExitConfirmButtonAt(mx, my, id) {
+        const r = this._exitConfirmRects?.[id];
+        if (!r) return false;
+        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
     }
 
     // --- Settings Screen ---

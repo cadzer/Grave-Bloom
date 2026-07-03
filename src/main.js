@@ -410,7 +410,7 @@ class Game {
                     return;
                 }
                 if (this.ui.isMenuButtonAt(mx, my, 'exit')) {
-                    window.close();
+                    this.gameState = 'exitconfirm';
                     return;
                 }
                 if (this.ui.isMenuButtonAt(mx, my, 'debug')) {
@@ -573,6 +573,18 @@ class Game {
                 if (this.ui.isAchievementsButtonAt(mx, my, 'back')) {
                     this.gameState = 'menu';
                     this.ui.showMenu();
+                    return;
+                }
+                return;
+            }
+
+            if (this.gameState === 'exitconfirm') {
+                if (this.ui.isExitConfirmButtonAt(mx, my, 'yes')) {
+                    window.close();
+                    return;
+                }
+                if (this.ui.isExitConfirmButtonAt(mx, my, 'no')) {
+                    this.gameState = 'menu';
                     return;
                 }
                 return;
@@ -798,6 +810,10 @@ class Game {
                 if (this.gameState === 'achievements') {
                     this.gameState = 'menu';
                     this.ui.showMenu();
+                    return;
+                }
+                if (this.gameState === 'exitconfirm') {
+                    this.gameState = 'menu';
                     return;
                 }
             }
@@ -1192,6 +1208,12 @@ class Game {
 
         if (this.gameState === 'achievements') {
             this.ui.drawAchievements(ctx);
+            return;
+        }
+
+        if (this.gameState === 'exitconfirm') {
+            this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker, false);
+            this.ui.drawExitConfirm(ctx);
             return;
         }
 
