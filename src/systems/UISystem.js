@@ -2731,10 +2731,10 @@ export class UISystem {
             { id: 'exit', label: '\uD83D\uDEAA  Exit', color1: '#3a2a30', color2: '#2a1a22', glow: '#8b3a62' },
         ];
 
-        // Measure shop text to set column width
+        // Measure text widths for column widths
         ctx.font = `500 16px ${FB}`;
-        const shopTextW = ctx.measureText('\uD83C\uDF3F  Bloomkeeper\'s Sanctum').width;
-        const colBtnW = shopTextW + 50;
+        const leftBtnW = ctx.measureText('\uD83C\uDF3F  Bloomkeeper\'s Sanctum').width + 50;
+        const rightBtnW = ctx.measureText('\uD83C\uDFC6  Achievements').width + 50;
         const rightBtnH = 52;
         const rightColH = rightBtns.length * rightBtnH + (rightBtns.length - 1) * 14;
         const btnGap = 14;
@@ -2747,17 +2747,17 @@ export class UISystem {
         const maxColH = Math.max(leftColH, rightColH);
 
         const topMargin = divY + 24;
-        const totalColW = colBtnW * 2 + colGap;
+        const totalColW = leftBtnW + rightBtnW + colGap;
         const colStartX = (W - totalColW) / 2;
         const leftColX = colStartX;
-        const rightColX = colStartX + colBtnW + colGap;
+        const rightColX = colStartX + leftBtnW + colGap;
         const colTop = topMargin;
 
-        this._drawMenuButton(ctx, leftColX, colTop, colBtnW, leftBtnH1, leftBtns[0], t, true);
-        this._drawMenuButton(ctx, leftColX, colTop + leftBtnH1 + btnGap, colBtnW, leftBtnH2, leftBtns[1], t, false);
+        this._drawMenuButton(ctx, leftColX, colTop, leftBtnW, leftBtnH1, leftBtns[0], t, true);
+        this._drawMenuButton(ctx, leftColX, colTop + leftBtnH1 + btnGap, leftBtnW, leftBtnH2, leftBtns[1], t, false);
 
         for (let i = 0; i < rightBtns.length; i++) {
-            this._drawMenuButton(ctx, rightColX, colTop + i * (rightBtnH + btnGap), colBtnW, rightBtnH, rightBtns[i], t, false);
+            this._drawMenuButton(ctx, rightColX, colTop + i * (rightBtnH + btnGap), rightBtnW, rightBtnH, rightBtns[i], t, false);
         }
 
         const bottomY = colTop + maxColH + 24;
