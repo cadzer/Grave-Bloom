@@ -2974,7 +2974,7 @@ export class UISystem {
             const auraPulse = (pulse - 0.98) / 0.04;
             const cx = bw / 2;
             const cy = bh / 2;
-            const maxR = Math.max(bw, bh) * 0.9;
+            const maxR = Math.max(bw, bh) * 0.55;
             const auraGrad = ctx.createRadialGradient(cx, cy, bh * 0.2, cx, cy, maxR);
             auraGrad.addColorStop(0, `rgba(124,154,110,${auraPulse})`);
             auraGrad.addColorStop(0.3, `rgba(184,217,78,${auraPulse * 0.6})`);
