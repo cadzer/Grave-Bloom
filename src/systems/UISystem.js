@@ -2971,7 +2971,7 @@ export class UISystem {
 
         // Outer glow aura for Begin button
         if (hovered && isBegin) {
-            const auraPulse = 0.3 + Math.sin(t * 3) * 0.15;
+            const auraPulse = (pulse - 0.98) / 0.04;
             const cx = bw / 2;
             const cy = bh / 2;
             const maxR = Math.max(bw, bh) * 0.9;
