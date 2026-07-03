@@ -2731,15 +2731,20 @@ export class UISystem {
             { id: 'exit', label: '\uD83D\uDEAA  Exit', color1: '#3a2a30', color2: '#2a1a22', glow: '#8b3a62' },
         ];
 
-        const colBtnW = 320;
-        const leftBtnH1 = 80;
-        const leftBtnH2 = 48;
+        // Measure "Achievements" text to set right column width
+        ctx.font = `500 16px ${FB}`;
+        const achievTextW = ctx.measureText('\uD83C\uDFC6  Achievements').width;
+        const rightBtnW = achievTextW + 50;
         const rightBtnH = 52;
-        const colGap = 30;
+        const rightColH = rightBtns.length * rightBtnH + (rightBtns.length - 1) * 14;
         const btnGap = 14;
 
+        const leftBtnH1 = 108;
+        const leftBtnH2 = 62;
+        const colBtnW = rightBtnW;
+        const colGap = 30;
+
         const leftColH = leftBtnH1 + leftBtnH2 + btnGap;
-        const rightColH = rightBtns.length * rightBtnH + (rightBtns.length - 1) * btnGap;
         const maxColH = Math.max(leftColH, rightColH);
 
         const topMargin = divY + 24;
