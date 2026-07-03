@@ -1,5 +1,8 @@
 import { Input } from './core/Input.js';
 import { GAME, SCREEN_SHAKE, LEVELING, BOSS, COINS, CHARACTERS, LOADOUTS, SHOP_UPGRADES } from './config/GameConfig.js';
+
+const FD = 'Rajdhani';
+const FB = 'Inter';
 import { Player } from './entities/Player.js';
 import { createGemDrop } from './entities/XPGem.js';
 import { TreasureChest } from './entities/TreasureChest.js';
