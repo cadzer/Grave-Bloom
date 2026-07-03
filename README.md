@@ -7,7 +7,7 @@
 ![Screenshot](screenshot.png)
 
 [![Download](https://img.shields.io/badge/Download-GraveBloom--Setup.exe-brightgreen?style=for-the-badge&logo=windows)](https://github.com/cadzer/Grave-Bloom/releases/latest)
-![Version](https://img.shields.io/badge/version-1.1.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.2.0-blue?style=for-the-badge)
 
 </div>
 
@@ -67,7 +67,7 @@ A survivor-style action game where you play as a **Bloomkeeper** — a lone guar
 Grab the latest release from the [Releases page](https://github.com/cadzer/Grave-Bloom/releases/latest):
 
 - **GraveBloom-Setup.exe** — NSIS installer with desktop shortcut
-- **GraveBloom-v1.1.0.zip** — Portable zip (extract and run)
+- **GraveBloom-v1.2.0.zip** — Portable zip (extract and run)
 
 ---
 
