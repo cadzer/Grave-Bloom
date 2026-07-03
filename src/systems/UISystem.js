@@ -3797,33 +3797,8 @@ export class UISystem {
         const backX = panelX;
         const backY = H - 80;
         this._tutorialRects.back = { x: backX, y: backY, w: backW, h: backH };
-        const hovered = this.mouseX >= backX && this.mouseX <= backX + backW &&
-                        this.mouseY >= backY && this.mouseY <= backY + backH;
-        const pulse = hovered ? 1 + Math.sin(t * 4) * 0.03 : 1;
-        ctx.save();
-        ctx.translate(backX + backW / 2, backY + backH / 2);
-        ctx.scale(pulse, pulse);
-        ctx.translate(-backW / 2, -backH / 2);
-        const backGrad = ctx.createLinearGradient(0, 0, 0, backH);
-        backGrad.addColorStop(0, hovered ? '#5a5a60' : '#4a4a50');
-        backGrad.addColorStop(1, '#3a3a40');
-        ctx.fillStyle = backGrad;
-        ctx.beginPath();
-        ctx.roundRect(0, 0, backW, backH, 12);
-        ctx.fill();
-        if (hovered) drawGlowBorder(ctx, -1, -1, backW + 2, backH + 2, 13, '#7b5ea7', t, 8);
-        ctx.fillStyle = hovered ? '#fff' : '#e8e4dc';
-        ctx.font = `bold 18px ${FD}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('\u2190  Back', backW / 2, backH / 2);
-        ctx.restore();
-
-        // Tab page indicator
-        ctx.fillStyle = 'rgba(232,228,220,0.25)';
-        ctx.font = `500 14px ${FB}`;
-        ctx.textAlign = 'center';
-        ctx.fillText(`Page ${tab + 1} of 5`, W / 2, H - 60);
+        this._drawMenuButton(ctx, backX, backY, backW, backH,
+            { id: 'tutorialback', label: '\u2190  Back', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' }, t, false);
     }
 
     drawTutorialControls(ctx, px, py, pw, ph, t) {
