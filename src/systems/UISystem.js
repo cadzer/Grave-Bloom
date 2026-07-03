@@ -2760,12 +2760,6 @@ export class UISystem {
             this._drawMenuButton(ctx, bx, by, secBtnW, secBtnH, btn, t, false);
         }
 
-        // Bottom hint
-        ctx.fillStyle = 'rgba(232,228,220,0.12)';
-        ctx.font = `500 12px ${FB}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText('WASD / Arrow Keys to move  \u2022  Auto-attack enemies  \u2022  Survive the Blight', W / 2, H - 30);
 
         // Version text
         const version = updateChecker ? updateChecker.currentVersion : '?';
