@@ -1076,7 +1076,7 @@ class Game {
         }
 
         this.potionSpawnTimer += dt;
-        if (this.potionSpawnTimer >= 10 && this.potions.length < 5) {
+        if (this.potionSpawnTimer >= 20 && this.potions.length < 3 && this.player.hp < this.player.maxHp) {
             this.potionSpawnTimer = 0;
             const angle = Math.random() * Math.PI * 2;
             const dist = 200 + Math.random() * 400;
