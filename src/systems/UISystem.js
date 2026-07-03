@@ -1807,11 +1807,22 @@ export class UISystem {
         const W = GAME.WIDTH;
         const H = GAME.HEIGHT;
 
-        // Dark background
-        ctx.fillStyle = '#0a0a1a';
-        ctx.fillRect(0, 0, W, H);
+        this.menuBg.render();
+        ctx.drawImage(this.menuBg.canvas, 0, 0);
 
-        this.drawBackgroundParticles(ctx, t);
+        if (!this._blurCanvas) {
+            this._blurCanvas = document.createElement('canvas');
+            this._blurCanvas.width = W;
+            this._blurCanvas.height = H;
+        }
+        this._blurCanvas.getContext('2d').drawImage(ctx.canvas, 0, 0);
+        ctx.save();
+        ctx.filter = 'blur(6px)';
+        ctx.drawImage(this._blurCanvas, 0, 0);
+        ctx.restore();
+
+        ctx.fillStyle = 'rgba(10,14,8,0.82)';
+        ctx.fillRect(0, 0, W, H);
 
         // Title
         ctx.save();
@@ -4454,10 +4465,22 @@ export class UISystem {
         const H = GAME.HEIGHT;
         this._achievRects = {};
 
-        ctx.fillStyle = '#141418';
-        ctx.fillRect(0, 0, W, H);
+        this.menuBg.render();
+        ctx.drawImage(this.menuBg.canvas, 0, 0);
 
-        this.drawBackgroundParticles(ctx, t);
+        if (!this._blurCanvas) {
+            this._blurCanvas = document.createElement('canvas');
+            this._blurCanvas.width = W;
+            this._blurCanvas.height = H;
+        }
+        this._blurCanvas.getContext('2d').drawImage(ctx.canvas, 0, 0);
+        ctx.save();
+        ctx.filter = 'blur(6px)';
+        ctx.drawImage(this._blurCanvas, 0, 0);
+        ctx.restore();
+
+        ctx.fillStyle = 'rgba(10,14,8,0.82)';
+        ctx.fillRect(0, 0, W, H);
 
         ctx.fillStyle = '#e8e4dc';
         ctx.font = `bold 32px ${FD}`;
