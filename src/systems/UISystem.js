@@ -1068,10 +1068,24 @@ export class UISystem {
             ctx.fillText(ch.name, cardW / 2, Math.round(110 * cs));
             ctx.shadowBlur = 0;
 
-            // Description
+            // Description (word-wrapped)
             ctx.fillStyle = 'rgba(255,255,255,0.55)';
             ctx.font = `500 ${Math.max(8, Math.round(12 * cs))}px ${FB}`;
-            ctx.fillText(ch.description, cardW / 2, Math.round(135 * cs));
+            const descMaxW = cardW - 24;
+            const descWords = ch.description.split(' ');
+            let descLine = '';
+            let descY = Math.round(135 * cs);
+            for (const word of descWords) {
+                const test = descLine + (descLine ? ' ' : '') + word;
+                if (ctx.measureText(test).width > descMaxW && descLine) {
+                    ctx.fillText(descLine, cardW / 2, descY);
+                    descLine = word;
+                    descY += Math.round(14 * cs);
+                } else {
+                    descLine = test;
+                }
+            }
+            if (descLine) ctx.fillText(descLine, cardW / 2, descY);
 
             // Divider
             const divY = Math.round(155 * cs);
