@@ -2640,10 +2640,13 @@ export class UISystem {
 
             const subY = logoY + logoH + 16;
             const subAlpha = 0.35 + Math.sin(t * 1.2) * 0.1;
-            ctx.fillStyle = `rgba(184,217,78,${subAlpha})`;
             ctx.font = `italic 500 18px ${FB}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
+            ctx.strokeStyle = `rgba(10,8,20,${subAlpha + 0.2})`;
+            ctx.lineWidth = 1;
+            ctx.strokeText('Tend the garden. Hold back the Blight.', W / 2, subY);
+            ctx.fillStyle = `rgba(184,217,78,${subAlpha})`;
             ctx.fillText('Tend the garden. Hold back the Blight.', W / 2, subY);
 
             divY = subY + 30;
