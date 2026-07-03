@@ -3393,8 +3393,10 @@ export class UISystem {
         this._loadoutRects = [];
         this.hudTimer += 0.016;
         const t = this.hudTimer;
+        const W = GAME.WIDTH;
+        const H = GAME.HEIGHT;
         ctx.fillStyle = '#141416';
-        ctx.fillRect(0, 0, GAME.WIDTH, GAME.HEIGHT);
+        ctx.fillRect(0, 0, W, H);
 
         const unlocked = shopSystem.getUnlockedLoadouts();
 
