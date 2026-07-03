@@ -2640,7 +2640,7 @@ export class UISystem {
 
             const subY = logoY + logoH + 16;
             const subAlpha = 0.35 + Math.sin(t * 1.2) * 0.1;
-            ctx.font = `italic 500 18px ${FB}`;
+            ctx.font = `italic 500 22px ${FB}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
             ctx.strokeStyle = `rgba(10,8,20,${subAlpha + 0.2})`;
