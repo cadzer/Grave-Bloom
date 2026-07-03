@@ -2703,62 +2703,63 @@ export class UISystem {
         ctx.stroke();
         drawDiamond(ctx, W / 2, divY, 4, '#b8d94e', 0.5);
 
-        // --- Button layout: two columns ---
+        // --- Button layout: two columns + bottom row ---
         this._menuRects = {};
 
-        // Primary column (left) — bigger buttons
-        const primBtns = [
+        const leftBtns = [
             { id: 'begin', label: '\u2728  Begin Bloom', color1: '#7c9a6e', color2: '#4a6e3a', glow: '#7c9a6e' },
+            { id: 'shop', label: '\uD83C\uDF3F  Bloomkeeper\'s Sanctum', color1: '#5a8f7c', color2: '#3d6b52', glow: '#5a8f7c' },
         ];
 
-        // Secondary column (right) — smaller buttons
-        const secBtns = [
-            { id: 'shop', label: '\uD83C\uDF3F  Bloomkeeper\'s Sanctum', color1: '#5a8f7c', color2: '#3d6b52', glow: '#5a8f7c' },
+        const rightBtns = [
             { id: 'tutorial', label: '\uD83D\uDCD6  Tutorial', color1: '#5a6f8c', color2: '#3d5270', glow: '#5a8fcf' },
             { id: 'settings', label: '\u2699\uFE0F  Settings', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' },
+        ];
+
+        const bottomBtns = [
             { id: 'debug', label: debug ? '\u2705  Debug: ON' : '\u26AA  Debug: OFF', color1: debug ? '#3a5a3a' : '#2a2a30', color2: debug ? '#2a4a2a' : '#1a1a22', glow: debug ? '#4caf50' : '#666' },
             { id: 'exit', label: '\uD83D\uDEAA  Exit', color1: '#3a2a30', color2: '#2a1a22', glow: '#8b3a62' },
         ];
 
-        // Column positions
-        const colGap = 30;
-        const primBtnW = 360;
-        const primBtnH = 72;
-        const secBtnW = 310;
-        const secBtnH = 52;
-        const btnGap = 14;
+        const colBtnW = 340;
+        const colBtnH = 62;
+        const colGap = 40;
+        const btnGap = 16;
 
-        const totalW = primBtnW + colGap + secBtnW;
+        const totalW = colBtnW * 2 + colGap;
         const colStartX = (W - totalW) / 2;
-        const primColX = colStartX;
-        const secColX = colStartX + primBtnW + colGap;
+        const leftColX = colStartX;
+        const rightColX = colStartX + colBtnW + colGap;
 
-        // Center buttons vertically in available space (between div and bottom hint)
         const topMargin = divY + 30;
-        const bottomMargin = H - 90;
+        const bottomMargin = H - 100;
         const availH = bottomMargin - topMargin;
 
-        // Primary column
-        const primTotalH = primBtns.length * primBtnH + (primBtns.length - 1) * btnGap;
-        const primStartY = topMargin + (availH - primTotalH) / 2;
+        const colTotalH = leftBtns.length * colBtnH + (leftBtns.length - 1) * btnGap;
+        const colStartY = topMargin + (availH - colTotalH) / 2;
 
-        for (let i = 0; i < primBtns.length; i++) {
-            const btn = primBtns[i];
-            const bx = primColX;
-            const by = primStartY + i * (primBtnH + btnGap);
-            this._drawMenuButton(ctx, bx, by, primBtnW, primBtnH, btn, t, true);
+        for (let i = 0; i < leftBtns.length; i++) {
+            const btn = leftBtns[i];
+            this._drawMenuButton(ctx, leftColX, colStartY + i * (colBtnH + btnGap), colBtnW, colBtnH, btn, t, true);
         }
 
-        // Secondary column
-        const secTotalH = secBtns.length * secBtnH + (secBtns.length - 1) * (btnGap - 2);
-        const secStartY = topMargin + (availH - secTotalH) / 2;
-
-        for (let i = 0; i < secBtns.length; i++) {
-            const btn = secBtns[i];
-            const bx = secColX;
-            const by = secStartY + i * (secBtnH + btnGap - 2);
-            this._drawMenuButton(ctx, bx, by, secBtnW, secBtnH, btn, t, false);
+        for (let i = 0; i < rightBtns.length; i++) {
+            const btn = rightBtns[i];
+            this._drawMenuButton(ctx, rightColX, colStartY + i * (colBtnH + btnGap), colBtnW, colBtnH, btn, t, true);
         }
+
+        const bottomY = colStartY + colTotalH + 30;
+        const bottomGap = 20;
+        const bottomBtnH = 38;
+
+        ctx.font = `500 15px ${FB}`;
+        const debugBtnW = ctx.measureText(bottomBtns[0].label).width + 40;
+        const exitBtnW = ctx.measureText(bottomBtns[1].label).width + 40;
+        const bottomTotalW = debugBtnW + bottomGap + exitBtnW;
+        const bottomStartX = (W - bottomTotalW) / 2;
+
+        this._drawMenuButton(ctx, bottomStartX, bottomY, debugBtnW, bottomBtnH, bottomBtns[0], t, false);
+        this._drawMenuButton(ctx, bottomStartX + debugBtnW + bottomGap, bottomY, exitBtnW, bottomBtnH, bottomBtns[1], t, false);
 
 
         // Version text
