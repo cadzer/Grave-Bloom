@@ -27,7 +27,7 @@ export class MenuBackground {
             img.src = src;
         });
 
-        this.bgImage = await loadImage('assets/menu-bg.png');
+        this.bgImage = await loadImage('assets/menu-bg.jpg');
         this.logoImage = await loadImage('assets/menu-logo.png');
     }
 
