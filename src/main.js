@@ -1212,7 +1212,7 @@ class Game {
         }
 
         if (this.gameState === 'exitconfirm') {
-            this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker, false);
+            this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker, true);
             this.ui.drawExitConfirm(ctx);
             return;
         }
