@@ -190,7 +190,7 @@ export const ENEMIES = {
     HEALTH_BAR_HEIGHT: 6,
 
     spore: {
-        hp: 10,
+        hp: 20,
         speed: 55,
         damage: 8,
         color: '#5a7a3c',
@@ -198,7 +198,7 @@ export const ENEMIES = {
         collisionRadius: 28
     },
     wisp: {
-        hp: 5,
+        hp: 10,
         speed: 130,
         damage: 6,
         color: '#7b5ea7',
@@ -206,7 +206,7 @@ export const ENEMIES = {
         collisionRadius: 20
     },
     barkfell: {
-        hp: 50,
+        hp: 100,
         speed: 38,
         damage: 18,
         color: '#8b4513',
@@ -214,7 +214,7 @@ export const ENEMIES = {
         collisionRadius: 38
     },
     rootcrawler: {
-        hp: 8,
+        hp: 16,
         speed: 85,
         damage: 10,
         color: '#6b3a2a',
@@ -222,7 +222,7 @@ export const ENEMIES = {
         collisionRadius: 18
     },
     revenant: {
-        hp: 100,
+        hp: 200,
         speed: 50,
         damage: 22,
         color: '#3d3449',
@@ -230,7 +230,7 @@ export const ENEMIES = {
         collisionRadius: 42
     },
     leech: {
-        hp: 15,
+        hp: 30,
         speed: 70,
         damage: 6,
         color: '#8b2252',
@@ -240,7 +240,7 @@ export const ENEMIES = {
         healAmount: 3
     },
     mimic: {
-        hp: 25,
+        hp: 50,
         speed: 100,
         damage: 14,
         color: '#b8d94e',
@@ -250,7 +250,7 @@ export const ENEMIES = {
         disguiseAs: 'gem'
     },
     hive: {
-        hp: 30,
+        hp: 60,
         speed: 45,
         damage: 12,
         color: '#c4a23a',
@@ -259,7 +259,7 @@ export const ENEMIES = {
         splitCount: 3
     },
     warden: {
-        hp: 60,
+        hp: 120,
         speed: 40,
         damage: 10,
         color: '#4a6a8a',
@@ -284,7 +284,7 @@ export const WAVES = {
             ]
         },
         {
-            start: 30,
+            start: 100,
             name: 'Blighted Awakening',
             message: 'Lost spirits drift through the mist!',
             spawnRate: 1.2,
@@ -296,7 +296,7 @@ export const WAVES = {
             ]
         },
         {
-            start: 75,
+            start: 250,
             name: 'Tangled Roots',
             message: 'The roots reach for you...',
             spawnRate: 1.0,
@@ -309,7 +309,7 @@ export const WAVES = {
             ]
         },
         {
-            start: 120,
+            start: 400,
             name: 'Blighted Thicket',
             message: 'The deadwood awakens!',
             spawnRate: 0.8,
@@ -323,7 +323,7 @@ export const WAVES = {
             ]
         },
         {
-            start: 180,
+            start: 600,
             name: 'Iron Rot',
             message: 'The ancient treants march!',
             spawnRate: 0.6,
@@ -337,7 +337,7 @@ export const WAVES = {
             ]
         },
         {
-            start: 240,
+            start: 800,
             name: 'Revenant Vanguard',
             message: 'The armored dead have arrived!',
             spawnRate: 0.5,
@@ -352,7 +352,7 @@ export const WAVES = {
             ]
         },
         {
-            start: 300,
+            start: 1000,
             name: 'The Unseelie Court',
             message: 'The Blight has no end...',
             spawnRate: 0.4,
@@ -369,7 +369,7 @@ export const WAVES = {
             ]
         },
         {
-            start: 360,
+            start: 1200,
             name: 'The Living Swarm',
             message: 'The hive stirs... Wardens lead them!',
             spawnRate: 0.35,
