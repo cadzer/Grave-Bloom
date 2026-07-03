@@ -3495,24 +3495,14 @@ export class UISystem {
             }
         });
 
-        const backX = GAME.WIDTH / 2 - 80;
+        // Back button (centered below cards)
+        const backW = 180;
+        const backH = 48;
+        const backX = (W - backW) / 2;
         const backY = startY + 2 * (cardH + gap) + 20;
-        this._loadoutBackRect = { x: backX, y: backY, w: 160, h: 44 };
-
-        const backHover = this._loadoutHover === 'back';
-        ctx.fillStyle = backHover ? 'rgba(180,140,80,0.25)' : 'rgba(30,25,20,0.3)';
-        ctx.beginPath();
-        ctx.roundRect(backX, backY, 160, 44, 8);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(180,140,80,0.3)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        ctx.font = `bold 18px ${FD}`;
-        ctx.fillStyle = '#e8e0d4';
-        ctx.textAlign = 'center';
-        ctx.fillText('Back', backX + 80, backY + 28);
-        ctx.textAlign = 'left';
+        this._loadoutBackRect = { x: backX, y: backY, w: backW, h: backH };
+        this._drawMenuButton(ctx, backX, backY, backW, backH,
+            { id: 'loadoutback', label: '\u2190  Back', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' }, t, false);
     }
 
     setLoadoutHover(id) { this._loadoutHover = id; }
