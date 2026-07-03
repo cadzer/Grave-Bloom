@@ -13,31 +13,36 @@ export class MenuBackground {
         this.rendered = false;
         this.bgImage = null;
         this.logoImage = null;
-        this.loaded = false;
+        this._ready = false;
+        this._loadStarted = false;
     }
 
-    async load() {
-        if (this.loaded) return;
-        this.loaded = true;
-
+    load() {
+        if (this._loadStarted) return;
+        this._loadStarted = true;
         const loadImage = (src) => new Promise((resolve) => {
             const img = new Image();
             img.onload = () => resolve(img);
             img.onerror = () => resolve(null);
             img.src = src;
         });
-
-        this.bgImage = await loadImage('assets/menu-bg.jpg');
-        this.logoImage = await loadImage('assets/menu-logo.png');
+        Promise.all([
+            loadImage('assets/menu-bg.jpg'),
+            loadImage('assets/menu-logo.png')
+        ]).then(([bg, logo]) => {
+            this.bgImage = bg;
+            this.logoImage = logo;
+            this._ready = true;
+            this.rendered = false;
+        });
     }
 
     render() {
         if (this.rendered) return;
+        if (!this._ready) return;
         const ctx = this.ctx;
 
-        // === BACKGROUND IMAGE ===
         if (this.bgImage) {
-            // Scale to cover entire canvas (center crop)
             const imgRatio = this.bgImage.width / this.bgImage.height;
             const canvasRatio = W / H;
             let drawW, drawH, drawX, drawY;
@@ -56,7 +61,6 @@ export class MenuBackground {
 
             ctx.drawImage(this.bgImage, drawX, drawY, drawW, drawH);
         } else {
-            // Fallback gradient if image fails to load
             const grad = ctx.createLinearGradient(0, 0, 0, H);
             grad.addColorStop(0, '#1a1040');
             grad.addColorStop(0.5, '#3a1545');
@@ -65,10 +69,7 @@ export class MenuBackground {
             ctx.fillRect(0, 0, W, H);
         }
 
-        // === VIGNETTE OVERLAY ===
         this._drawVignette(ctx);
-
-        // === SUBTLE GRAIN ===
         this._drawGrain(ctx);
 
         this.rendered = true;
