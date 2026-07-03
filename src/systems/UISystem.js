@@ -2972,14 +2972,16 @@ export class UISystem {
         // Outer glow aura for Begin button
         if (hovered && isBegin) {
             const auraPulse = 0.3 + Math.sin(t * 3) * 0.15;
-            const auraGrad = ctx.createRadialGradient(bw / 2, bh / 2, bh * 0.3, bw / 2, bh / 2, bh * 1.4);
+            const cx = bw / 2;
+            const cy = bh / 2;
+            const maxR = Math.max(bw, bh) * 1.5;
+            const auraGrad = ctx.createRadialGradient(cx, cy, bh * 0.2, cx, cy, maxR);
             auraGrad.addColorStop(0, `rgba(124,154,110,${auraPulse})`);
-            auraGrad.addColorStop(0.5, `rgba(184,217,78,${auraPulse * 0.5})`);
+            auraGrad.addColorStop(0.3, `rgba(184,217,78,${auraPulse * 0.6})`);
+            auraGrad.addColorStop(0.6, `rgba(184,217,78,${auraPulse * 0.2})`);
             auraGrad.addColorStop(1, 'rgba(184,217,78,0)');
             ctx.fillStyle = auraGrad;
-            ctx.beginPath();
-            ctx.ellipse(bw / 2, bh / 2, bw * 0.75, bh * 1.2, 0, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.fillRect(cx - maxR, cy - maxR, maxR * 2, maxR * 2);
         }
 
         // Button background
