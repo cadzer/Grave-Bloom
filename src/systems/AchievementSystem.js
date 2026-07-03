@@ -60,6 +60,12 @@ export class AchievementSystem {
         this._newThisRun = [];
     }
 
+    reset() {
+        this._unlocked = new Set();
+        this._newThisRun = [];
+        localStorage.removeItem(STORAGE_KEY);
+    }
+
     getAll() {
         return ACHIEVEMENTS.map(a => ({
             ...a,

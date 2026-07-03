@@ -41,6 +41,7 @@ export class ShopSystem {
             this.upgradeLevels[key] = 0;
         }
         this.save();
+        localStorage.removeItem('gravebloom_fullscreen');
     }
 
     refundUpgrades() {
