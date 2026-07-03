@@ -2709,6 +2709,7 @@ export class UISystem {
         const beginBtn = { id: 'begin', label: '\u2728  Begin Bloom', color1: '#7c9a6e', color2: '#4a6e3a', glow: '#7c9a6e' };
         const leftBtns = [
             { id: 'shop', label: '\uD83C\uDF3F  Bloomkeeper\'s Sanctum', color1: '#5a8f7c', color2: '#3d6b52', glow: '#5a8f7c' },
+            { id: 'achievements', label: '\uD83C\uDFC6  Achievements', color1: '#6a5a3a', color2: '#4a3a22', glow: '#c4a23a' },
             { id: 'settings', label: '\u2699\uFE0F  Settings', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' },
         ];
         const rightBtns = [
@@ -2722,11 +2723,10 @@ export class UISystem {
         const beginW = 400;
         const beginH = 72;
         const colBtnW = 300;
-        const leftBtnH1 = 80;
-        const leftBtnH2 = 48;
-        const rightBtnH = leftBtnH1 + leftBtnH2 + 14;
+        const leftBtnH = 52;
+        const rightBtnH = leftBtns.length * leftBtnH + (leftBtns.length - 1) * btnGap;
         const colGap = 30;
-        const btnGap = 14;
+        const btnGap = 12;
 
         const topMargin = divY + 24;
         const beginX = (W - beginW) / 2;
@@ -2740,8 +2740,9 @@ export class UISystem {
         const leftColX = colStartX;
         const rightColX = colStartX + colBtnW + colGap;
 
-        this._drawMenuButton(ctx, leftColX, colTop, colBtnW, leftBtnH1, leftBtns[0], t, true);
-        this._drawMenuButton(ctx, leftColX, colTop + leftBtnH1 + btnGap, colBtnW, leftBtnH2, leftBtns[1], t, false);
+        this._drawMenuButton(ctx, leftColX, colTop, colBtnW, leftBtnH, leftBtns[0], t, true);
+        this._drawMenuButton(ctx, leftColX, colTop + leftBtnH + btnGap, colBtnW, leftBtnH, leftBtns[1], t, false);
+        this._drawMenuButton(ctx, leftColX, colTop + (leftBtnH + btnGap) * 2, colBtnW, leftBtnH, leftBtns[2], t, false);
 
         this._drawMenuButton(ctx, rightColX, colTop, colBtnW, rightBtnH, rightBtns[0], t, true);
 
@@ -4429,6 +4430,138 @@ export class UISystem {
                 ctx.fillText(reqText, cx2 + cardW / 2, reqY + 16);
             }
         }
+    }
+
+    // --- Achievements Screen ---
+
+    showAchievements(achievementSystem) {
+        this.achievementsScreen = { scrollY: 0 };
+        this._achievementSystem = achievementSystem;
+    }
+
+    hideAchievements() { this.achievementsScreen = null; }
+
+    isAchievementsButtonAt(mx, my, buttonId) {
+        if (!this._achievRects || !this._achievRects[buttonId]) return false;
+        const r = this._achievRects[buttonId];
+        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+    }
+
+    drawAchievements(ctx) {
+        this.hudTimer += 0.016;
+        this.updateParticles(0.016);
+        const t = this.hudTimer;
+        const W = GAME.WIDTH;
+        const H = GAME.HEIGHT;
+        this._achievRects = {};
+
+        ctx.fillStyle = '#141418';
+        ctx.fillRect(0, 0, W, H);
+
+        this.drawBackgroundParticles(ctx, t);
+
+        ctx.fillStyle = '#e8e4dc';
+        ctx.font = `bold 32px ${FD}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('Achievements', W / 2, 40);
+
+        const all = this._achievementSystem.getAll();
+        const unlocked = this._achievementSystem.getUnlockedCount();
+        const total = this._achievementSystem.getTotalCount();
+
+        ctx.fillStyle = 'rgba(232,228,220,0.4)';
+        ctx.font = `500 14px ${FB}`;
+        ctx.fillText(`${unlocked} / ${total} Unlocked`, W / 2, 80);
+
+        const panelX = 80;
+        const panelY = 110;
+        const panelW = W - 160;
+        const panelH = H - 170;
+
+        ctx.fillStyle = 'rgba(18,18,24,0.8)';
+        ctx.beginPath();
+        ctx.roundRect(panelX, panelY, panelW, panelH, 16);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(panelX, panelY, panelW, panelH, 16);
+        ctx.stroke();
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(panelX, panelY, panelW, panelH, 16);
+        ctx.clip();
+
+        const cardW = panelW - 40;
+        const cardH = 70;
+        const cardGap = 10;
+        const startY = panelY + 20;
+        const cols = 2;
+        const colW = (cardW - (cols - 1) * cardGap) / cols;
+
+        for (let i = 0; i < all.length; i++) {
+            const a = all[i];
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const cx = panelX + 20 + col * (colW + cardGap);
+            const cy = startY + row * (cardH + cardGap);
+
+            if (cy + cardH < panelY || cy > panelY + panelH) continue;
+
+            const isUnlocked = a.unlocked;
+            const hover = this.mouseX >= cx && this.mouseX <= cx + colW &&
+                         this.mouseY >= cy && this.mouseY <= cy + cardH;
+
+            ctx.fillStyle = hover
+                ? (isUnlocked ? 'rgba(124,154,110,0.15)' : 'rgba(255,255,255,0.05)')
+                : (isUnlocked ? 'rgba(124,154,110,0.08)' : 'rgba(255,255,255,0.02)');
+            ctx.beginPath();
+            ctx.roundRect(cx, cy, colW, cardH, 10);
+            ctx.fill();
+
+            if (isUnlocked) {
+                ctx.strokeStyle = 'rgba(124,154,110,0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(cx, cy, colW, cardH, 10);
+                ctx.stroke();
+            }
+
+            ctx.font = `22px ${FB}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = isUnlocked ? '#e8e4dc' : 'rgba(255,255,255,0.15)';
+            ctx.fillText(a.icon, cx + 28, cy + cardH / 2);
+
+            ctx.textAlign = 'left';
+            ctx.font = `600 14px ${FB}`;
+            ctx.fillStyle = isUnlocked ? '#e8e4dc' : 'rgba(255,255,255,0.25)';
+            ctx.fillText(a.name, cx + 52, cy + 22);
+
+            ctx.font = `400 12px ${FB}`;
+            ctx.fillStyle = isUnlocked ? 'rgba(232,228,220,0.5)' : 'rgba(255,255,255,0.12)';
+            ctx.fillText(a.desc, cx + 52, cy + 44);
+
+            if (isUnlocked) {
+                ctx.fillStyle = '#7c9a6e';
+                ctx.font = `500 11px ${FB}`;
+                ctx.textAlign = 'right';
+                ctx.fillText('UNLOCKED', cx + colW - 12, cy + 22);
+            }
+        }
+
+        ctx.restore();
+
+        const backBtnW = 160;
+        const backBtnH = 44;
+        const backBtnX = (W - backBtnW) / 2;
+        const backBtnY = panelY + panelH + 12;
+        const backBtn = { id: 'back', label: '\u2190  Back', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' };
+        this._drawMenuButton(ctx, backBtnX, backBtnY, backBtnW, backBtnH, backBtn, t, false);
+        this._achievRects['back'] = { x: backBtnX, y: backBtnY, w: backBtnW, h: backBtnH };
     }
 
     // --- Settings Screen ---
