@@ -40,6 +40,7 @@ export class ShopSystem {
         for (const key of Object.keys(this.upgradeLevels)) {
             this.upgradeLevels[key] = 0;
         }
+        this.unlockedLoadouts = [];
         this.save();
         localStorage.removeItem('gravebloom_fullscreen');
     }
