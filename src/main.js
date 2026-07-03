@@ -140,11 +140,13 @@ class Game {
         ctx.translate(this.renderer.shakeX, this.renderer.shakeY);
 
         this.renderer.clear();
-        this.renderer.drawBackground(this.player.x, this.player.y, this.elapsedTime);
+        const camOffX = this.bossIntroCamX || 0;
+        const camOffY = this.bossIntroCamY || 0;
+        this.renderer.drawBackground(this.player.x + camOffX, this.player.y + camOffY, this.elapsedTime);
 
-        this.ambient.draw(ctx, this.player.x, this.player.y);
+        this.ambient.draw(ctx, this.player.x + camOffX, this.player.y + camOffY);
 
-        this.structures.draw(ctx, this.player.x, this.player.y);
+        this.structures.draw(ctx, this.player.x + camOffX, this.player.y + camOffY);
 
         for (const gem of this.gems) {
             const gx = cx + (gem.x - this.player.x);
@@ -254,6 +256,9 @@ class Game {
         this.evolutionAnim = null;
         this.lowHealthPulse = 0;
         this.bossIntroTimer = 0;
+        this.bossIntroPhase = null;
+        this.bossIntroCamX = 0;
+        this.bossIntroCamY = 0;
         this.bossIntroName = '';
         this.potionSpawnTimer = 0;
 
@@ -936,6 +941,32 @@ class Game {
             return;
         }
 
+        if (this.bossIntroTimer > 0 && this.bossIntroPhase) {
+            this.bossIntroTimer -= dt;
+            const totalDuration = this.bossIntroDuration;
+            const elapsed = totalDuration - this.bossIntroTimer;
+            const halfDur = totalDuration * 0.6;
+            if (elapsed < halfDur) {
+                const t = Math.min(1, elapsed / 0.8);
+                const ease = t * t * (3 - 2 * t);
+                this.bossIntroCamX = (this.bossIntroTargetX - this.player.x) * ease;
+                this.bossIntroCamY = (this.bossIntroTargetY - this.player.y) * ease;
+            } else {
+                const t = Math.min(1, (elapsed - halfDur) / 0.8);
+                const ease = t * t * (3 - 2 * t);
+                this.bossIntroCamX = (this.bossIntroTargetX - this.player.x) * (1 - ease);
+                this.bossIntroCamY = (this.bossIntroTargetY - this.player.y) * (1 - ease);
+            }
+            if (this.bossIntroTimer <= 0) {
+                this.bossIntroPhase = null;
+                this.bossIntroCamX = 0;
+                this.bossIntroCamY = 0;
+            }
+            this.ui.updateAnnouncement(dt);
+            this.particles.update(dt);
+            return;
+        }
+
         if (this.gameState === 'chestreward') {
             this.ui.updateChestReward(dt);
             this.particles.update(dt);
@@ -1072,20 +1103,22 @@ class Game {
             this.spawner.bossJustSpawned = false;
             const latestBoss = this.spawner.getLatestBoss();
             if (latestBoss) {
-                this.bossIntroTimer = 2.0;
+                this.bossIntroTimer = 2.5;
+                this.bossIntroDuration = 2.5;
+                this.bossIntroTargetX = latestBoss.x;
+                this.bossIntroTargetY = latestBoss.y;
+                this.bossIntroCamX = 0;
+                this.bossIntroCamY = 0;
+                this.bossIntroPhase = 'toBoss';
                 this.bossIntroName = latestBoss.name || 'Unknown';
                 this.ui.showAnnouncement(this.bossIntroName, 'A powerful foe approaches!');
                 this.renderer.shake(12, 0.6);
                 this.renderer.flashScreen(255, 255, 255, 0.5, 0.3);
-                this.renderer.hitStop(0.12);
                 const bx = latestBoss.x - this.player.x + GAME.WIDTH / 2;
                 const by = latestBoss.y - this.player.y + GAME.HEIGHT / 2;
                 this.particles.ring(bx, by, 80, 24, '#fff', 0.5, 3);
                 this.particles.ring(bx, by, 50, 16, latestBoss.config?.auraColor || '#f1c40f', 0.4, 2.5);
             }
-        }
-        if (this.bossIntroTimer > 0) {
-            this.bossIntroTimer -= dt;
         }
         const enemies = this.spawner.getEnemies();
         const bosses = this.spawner.getBosses();
@@ -1265,10 +1298,57 @@ class Game {
             return;
         }
 
-        const cx = GAME.WIDTH / 2;
-        const cy = GAME.HEIGHT / 2;
+        const cx = GAME.WIDTH / 2 - (this.bossIntroCamX || 0);
+        const cy = GAME.HEIGHT / 2 - (this.bossIntroCamY || 0);
 
         this._renderPlaying(ctx, cx, cy);
+
+        if (this.bossIntroTimer > 0 && this.bossIntroPhase) {
+            const elapsed = this.bossIntroDuration - this.bossIntroTimer;
+            const totalDuration = this.bossIntroDuration;
+            const halfDur = totalDuration * 0.6;
+            let bannerAlpha;
+            if (elapsed < 0.4) {
+                bannerAlpha = Math.min(1, elapsed / 0.4);
+            } else if (elapsed < halfDur) {
+                bannerAlpha = 1;
+            } else {
+                bannerAlpha = Math.max(0, 1 - (elapsed - halfDur) / 0.3);
+            }
+            if (bannerAlpha > 0) {
+                ctx.fillStyle = `rgba(0,0,0,${0.4 * bannerAlpha})`;
+                ctx.fillRect(0, GAME.HEIGHT / 2 - 60, GAME.WIDTH, 120);
+                ctx.save();
+                ctx.globalAlpha = bannerAlpha;
+                ctx.strokeStyle = `rgba(255,60,60,${0.8 * bannerAlpha})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, GAME.HEIGHT / 2 - 60);
+                ctx.lineTo(GAME.WIDTH, GAME.HEIGHT / 2 - 60);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, GAME.HEIGHT / 2 + 60);
+                ctx.lineTo(GAME.WIDTH, GAME.HEIGHT / 2 + 60);
+                ctx.stroke();
+                ctx.fillStyle = '#fff';
+                ctx.font = `bold 56px ${FD}`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = '#ff3333';
+                ctx.shadowBlur = 20;
+                ctx.fillText(this.bossIntroName, GAME.WIDTH / 2, GAME.HEIGHT / 2 - 8);
+                ctx.shadowBlur = 10;
+                ctx.fillText(this.bossIntroName, GAME.WIDTH / 2, GAME.HEIGHT / 2 - 8);
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(255,200,200,0.7)';
+                ctx.font = `500 20px ${FB}`;
+                ctx.fillText('A powerful foe approaches!', GAME.WIDTH / 2, GAME.HEIGHT / 2 + 32);
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'alphabetic';
+                ctx.globalAlpha = 1;
+                ctx.restore();
+            }
+        }
 
         if (this.gameState === 'deathslowmo') {
             const alpha = Math.min(0.6, (1.5 - this.deathSlowmoTimer) / 1.5 * 0.6);
