@@ -1201,7 +1201,7 @@ class Game {
         }
 
         if (this.gameState === 'debugpassword') {
-            this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker, false);
+            this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker, true);
             this.ui.drawDebugPassword(ctx, this._debugPasswordInput, this._debugPasswordWrongTimer > 0);
             return;
         }
