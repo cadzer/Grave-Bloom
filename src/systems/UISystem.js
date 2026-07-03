@@ -99,6 +99,7 @@ export class UISystem {
         this.announcement = null;
         this.hudTimer = 0;
         this.menuBg = new MenuBackground();
+        this.menuBg.load();
         this.mouseX = 0;
         this.mouseY = 0;
         this._toggleAnim = { mute: 0, fullscreen: 0 };
@@ -2614,47 +2615,60 @@ export class UISystem {
 
         this._drawMenuAnimatedEffects(ctx, t, W, H);
 
-        // Vignette overlay
-        const vigGrad = ctx.createRadialGradient(W / 2, H / 2, W * 0.2, W / 2, H / 2, W * 0.7);
-        vigGrad.addColorStop(0, 'rgba(10,14,8,0.3)');
-        vigGrad.addColorStop(1, 'rgba(10,14,8,0.75)');
-        ctx.fillStyle = vigGrad;
-        ctx.fillRect(0, 0, W, H);
-
         this.drawBackgroundParticles(ctx, t);
 
         // --- Title block ---
         const titleY = H * 0.22;
+        const logo = this.menuBg.logoImage;
 
-        // Glow behind title
-        ctx.save();
-        const glowPulse = 0.6 + Math.sin(t * 0.8) * 0.15;
-        ctx.shadowColor = '#7c9a6e';
-        ctx.shadowBlur = 60 * glowPulse;
-        ctx.fillStyle = '#7c9a6e';
-        ctx.font = `bold 88px ${FD}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('GRAVE BLOOM', W / 2, titleY);
-        ctx.shadowBlur = 0;
-        ctx.restore();
+        if (logo) {
+            // Draw logo image centered
+            const logoScale = 0.35;
+            const logoW = logo.width * logoScale;
+            const logoH = logo.height * logoScale;
+            const logoX = (W - logoW) / 2;
+            const logoY = titleY - logoH / 2;
 
-        // Title text with gradient
-        ctx.save();
-        const titleGrad = ctx.createLinearGradient(W / 2 - 280, 0, W / 2 + 280, 0);
-        titleGrad.addColorStop(0, '#3d6b52');
-        titleGrad.addColorStop(0.2, '#7c9a6e');
-        titleGrad.addColorStop(0.35, '#c8e87a');
-        titleGrad.addColorStop(0.5, '#b8d94e');
-        titleGrad.addColorStop(0.65, '#c8e87a');
-        titleGrad.addColorStop(0.8, '#7c9a6e');
-        titleGrad.addColorStop(1, '#3d6b52');
-        ctx.fillStyle = titleGrad;
-        ctx.font = `bold 88px ${FD}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('GRAVE BLOOM', W / 2, titleY);
-        ctx.restore();
+            // Glow behind logo
+            ctx.save();
+            const glowPulse = 0.4 + Math.sin(t * 0.8) * 0.1;
+            ctx.shadowColor = '#9a6ec8';
+            ctx.shadowBlur = 50 * glowPulse;
+            ctx.drawImage(logo, logoX, logoY, logoW, logoH);
+            ctx.restore();
+
+            // Logo on top (no shadow)
+            ctx.drawImage(logo, logoX, logoY, logoW, logoH);
+        } else {
+            // Fallback: text title
+            ctx.save();
+            const glowPulse = 0.6 + Math.sin(t * 0.8) * 0.15;
+            ctx.shadowColor = '#7c9a6e';
+            ctx.shadowBlur = 60 * glowPulse;
+            ctx.fillStyle = '#7c9a6e';
+            ctx.font = `bold 88px ${FD}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('GRAVE BLOOM', W / 2, titleY);
+            ctx.shadowBlur = 0;
+            ctx.restore();
+
+            ctx.save();
+            const titleGrad = ctx.createLinearGradient(W / 2 - 280, 0, W / 2 + 280, 0);
+            titleGrad.addColorStop(0, '#3d6b52');
+            titleGrad.addColorStop(0.2, '#7c9a6e');
+            titleGrad.addColorStop(0.35, '#c8e87a');
+            titleGrad.addColorStop(0.5, '#b8d94e');
+            titleGrad.addColorStop(0.65, '#c8e87a');
+            titleGrad.addColorStop(0.8, '#7c9a6e');
+            titleGrad.addColorStop(1, '#3d6b52');
+            ctx.fillStyle = titleGrad;
+            ctx.font = `bold 88px ${FD}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('GRAVE BLOOM', W / 2, titleY);
+            ctx.restore();
+        }
 
         // Subtitle
         const subAlpha = 0.35 + Math.sin(t * 1.2) * 0.1;
