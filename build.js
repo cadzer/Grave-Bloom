@@ -72,6 +72,9 @@ async function download(url, dest) {
             if (fs.existsSync(src)) fs.copyFileSync(src, path.join(runtimeDir, f));
         }
         fs.cpSync(path.join(__dirname, 'src'), path.join(runtimeDir, 'src'), { recursive: true });
+        if (fs.existsSync(path.join(__dirname, 'assets'))) {
+            fs.cpSync(path.join(__dirname, 'assets'), path.join(runtimeDir, 'assets'), { recursive: true });
+        }
 
         // Step 5: Create package.json for NW.js runtime
         const nwPackage = {
