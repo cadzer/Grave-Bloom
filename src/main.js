@@ -1158,7 +1158,7 @@ class Game {
         const ctx = this.ctx;
 
         if (this.gameState === 'menu') {
-            this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker);
+            this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker, this._showUpdatePopup);
             if (this._showUpdatePopup) {
                 this.ui.drawUpdatePopup(ctx, this.updateChecker.latestVersion, this.updateChecker.updateUrl);
             }
@@ -1166,7 +1166,7 @@ class Game {
         }
 
         if (this.gameState === 'debugpassword') {
-            this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker);
+            this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker, false);
             this.ui.drawDebugPassword(ctx, this._debugPasswordInput, this._debugPasswordWrongTimer > 0);
             return;
         }

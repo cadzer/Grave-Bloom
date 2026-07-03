@@ -2600,10 +2600,11 @@ export class UISystem {
         return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
     }
 
-    drawMenu(ctx, sound, debug, updateChecker) {
+    drawMenu(ctx, sound, debug, updateChecker, updatePopupActive) {
         if (!this.menuScreen) return;
         this.hudTimer += 0.016;
         this.updateParticles(0.016);
+        this._menuPopupActive = !!updatePopupActive;
         const t = this.hudTimer;
         const W = GAME.WIDTH;
         const H = GAME.HEIGHT;
@@ -2761,6 +2762,21 @@ export class UISystem {
         } else {
             ctx.fillStyle = 'rgba(232,228,220,0.2)';
             ctx.fillText(`v${version}`, W - 20, H - 12);
+        }
+
+        if (this._menuPopupActive) {
+            if (!this._blurCanvas) {
+                this._blurCanvas = document.createElement('canvas');
+                this._blurCanvas.width = W;
+                this._blurCanvas.height = H;
+            }
+            this._blurCanvas.getContext('2d').drawImage(ctx.canvas, 0, 0);
+            ctx.save();
+            ctx.filter = 'blur(6px)';
+            ctx.drawImage(this._blurCanvas, 0, 0);
+            ctx.restore();
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(0, 0, W, H);
         }
     }
 
@@ -2920,7 +2936,8 @@ export class UISystem {
     }
 
     _drawMenuButton(ctx, bx, by, bw, bh, btn, t, primary) {
-        const hovered = this.mouseX >= bx && this.mouseX <= bx + bw &&
+        const hovered = !this._menuPopupActive &&
+                        this.mouseX >= bx && this.mouseX <= bx + bw &&
                         this.mouseY >= by && this.mouseY <= by + bh;
         const pulse = hovered ? 1 + Math.sin(t * 4) * 0.02 : 1;
 
