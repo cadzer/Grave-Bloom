@@ -376,7 +376,6 @@ class Game {
                 if (this._showUpdatePopup) {
                     if (this.ui.isUpdatePopupButtonAt(mx, my, 'update')) {
                         window.open(this.updateChecker.updateUrl, '_blank');
-                        this._showUpdatePopup = false;
                         return;
                     }
                     if (this.ui.isUpdatePopupButtonAt(mx, my, 'cancel')) {
