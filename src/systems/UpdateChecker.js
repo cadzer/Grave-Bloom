@@ -5,6 +5,7 @@ export class UpdateChecker {
         this.currentVersion = VERSION;
         this.latestVersion = null;
         this.updateUrl = null;
+        this.zipAssetUrl = null;
         this.updateAvailable = false;
         this.checking = false;
         this.checked = false;
@@ -27,6 +28,9 @@ export class UpdateChecker {
             const data = await response.json();
             this.latestVersion = data.tag_name?.replace(/^v/, '') || null;
             this.updateUrl = data.html_url || `https://github.com/${GITHUB_REPO}/releases/latest`;
+
+            const zipAsset = (data.assets || []).find(a => a.name.endsWith('.zip'));
+            this.zipAssetUrl = zipAsset ? zipAsset.browser_download_url : null;
 
             if (this.latestVersion) {
                 this.updateAvailable = this._isNewer(this.latestVersion, this.currentVersion);

@@ -2825,7 +2825,7 @@ export class UISystem {
         }
     }
 
-    drawUpdatePopup(ctx, latestVersion, updateUrl) {
+    drawUpdatePopup(ctx, latestVersion, updateUrl, autoUpdater) {
         const W = GAME.WIDTH;
         const H = GAME.HEIGHT;
         const t = this.hudTimer;
@@ -2833,8 +2833,9 @@ export class UISystem {
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
         ctx.fillRect(0, 0, W, H);
 
+        const isUpdating = autoUpdater && autoUpdater.downloading;
         const boxW = 460;
-        const boxH = 240;
+        const boxH = isUpdating ? 260 : 240;
         const boxX = (W - boxW) / 2;
         const boxY = (H - boxH) / 2;
 
@@ -2843,11 +2844,69 @@ export class UISystem {
         ctx.roundRect(boxX, boxY, boxW, boxH, 20);
         ctx.fill();
 
-        ctx.strokeStyle = 'rgba(243,156,18,0.3)';
+        ctx.strokeStyle = isUpdating ? 'rgba(124,154,110,0.3)' : 'rgba(243,156,18,0.3)';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.roundRect(boxX, boxY, boxW, boxH, 20);
         ctx.stroke();
+
+        if (isUpdating) {
+            const statusText = autoUpdater.status === 'downloading' ? 'Downloading update...'
+                : autoUpdater.status === 'extracting' ? 'Extracting files...'
+                : autoUpdater.status === 'installing' ? 'Installing update...'
+                : autoUpdater.status === 'restarting' ? 'Restarting game...'
+                : autoUpdater.status === 'error' ? 'Update failed!'
+                : 'Preparing...';
+
+            ctx.fillStyle = '#b8d94e';
+            ctx.font = `700 20px ${FB}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(statusText, W / 2, boxY + 50);
+
+            if (autoUpdater.status === 'downloading' && autoUpdater.progress > 0) {
+                const barW = boxW - 80;
+                const barH = 16;
+                const barX = boxX + 40;
+                const barY = boxY + 80;
+                ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                ctx.beginPath();
+                ctx.roundRect(barX, barY, barW, barH, 8);
+                ctx.fill();
+                ctx.fillStyle = '#b8d94e';
+                ctx.beginPath();
+                ctx.roundRect(barX, barY, barW * (autoUpdater.progress / 100), barH, 8);
+                ctx.fill();
+                ctx.fillStyle = '#e8e4dc';
+                ctx.font = `600 13px ${FB}`;
+                ctx.textAlign = 'center';
+                ctx.fillText(`${autoUpdater.progress}%`, W / 2, barY + barH + 18);
+            }
+
+            if (autoUpdater.status === 'error') {
+                ctx.fillStyle = '#e74c3c';
+                ctx.font = `500 13px ${FB}`;
+                ctx.textAlign = 'center';
+                ctx.fillText(autoUpdater.error || 'Unknown error', W / 2, boxY + 100);
+            }
+
+            const retryBtnW = 160;
+            const retryBtnH = 44;
+            const retryBtnX = (W - retryBtnW) / 2;
+            const retryBtnY = boxY + boxH - 60;
+            this._updatePopupUpdateBtn = { x: retryBtnX, y: retryBtnY, w: retryBtnW, h: retryBtnH };
+            this._updatePopupCancelBtn = null;
+            const retryHover = this.mouseX >= retryBtnX && this.mouseX <= retryBtnX + retryBtnW && this.mouseY >= retryBtnY && this.mouseY <= retryBtnY + retryBtnH;
+            ctx.fillStyle = retryHover ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)';
+            ctx.beginPath();
+            ctx.roundRect(retryBtnX, retryBtnY, retryBtnW, retryBtnH, 10);
+            ctx.fill();
+            ctx.fillStyle = retryHover ? '#e8e4dc' : 'rgba(255,255,255,0.45)';
+            ctx.font = `500 15px ${FB}`;
+            ctx.textAlign = 'center';
+            ctx.fillText(autoUpdater.status === 'error' ? 'Retry' : 'Close', retryBtnX + retryBtnW / 2, retryBtnY + retryBtnH / 2);
+            return;
+        }
 
         const iconPulse = 0.8 + Math.sin(t * 3) * 0.2;
         ctx.fillStyle = `rgba(243,156,18,${iconPulse})`;
@@ -2902,7 +2961,7 @@ export class UISystem {
         ctx.font = `700 15px ${FB}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Download', updateBtnX + btnW / 2, btnY + btnH / 2);
+        ctx.fillText('Update', updateBtnX + btnW / 2, btnY + btnH / 2);
 
         ctx.fillStyle = cancelHover ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)';
         ctx.beginPath();

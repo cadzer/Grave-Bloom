@@ -24,6 +24,7 @@ import { WeaponSynergySystem } from './systems/WeaponSynergySystem.js';
 import { RunHistorySystem } from './systems/RunHistorySystem.js';
 import { AmbientSystem } from './systems/AmbientSystem.js';
 import { UpdateChecker } from './systems/UpdateChecker.js';
+import { AutoUpdater } from './systems/AutoUpdater.js';
 
 class Game {
     constructor() {
@@ -41,6 +42,7 @@ class Game {
         this.runHistory = new RunHistorySystem();
         this.ambient = new AmbientSystem();
         this.updateChecker = new UpdateChecker();
+        this.autoUpdater = new AutoUpdater();
         this.updateChecker.checkForUpdates().then(() => {
             if (this.updateChecker.updateAvailable && this.gameState === 'menu') {
                 this._showUpdatePopup = true;
@@ -383,7 +385,19 @@ class Game {
             if (this.gameState === 'menu') {
                 if (this._showUpdatePopup) {
                     if (this.ui.isUpdatePopupButtonAt(mx, my, 'update')) {
-                        window.open(this.updateChecker.updateUrl, '_blank');
+                        if (this.autoUpdater.downloading) {
+                            this._showUpdatePopup = false;
+                            this.autoUpdater.downloading = false;
+                            this.autoUpdater.status = 'idle';
+                            this.autoUpdater.progress = 0;
+                            return;
+                        }
+                        const zipUrl = this.updateChecker.zipAssetUrl;
+                        if (zipUrl && this.updateChecker.latestVersion) {
+                            this.autoUpdater.startUpdate(zipUrl, this.updateChecker.latestVersion);
+                        } else {
+                            window.open(this.updateChecker.updateUrl, '_blank');
+                        }
                         return;
                     }
                     if (this.ui.isUpdatePopupButtonAt(mx, my, 'cancel')) {
@@ -1233,7 +1247,7 @@ class Game {
         if (this.gameState === 'menu') {
             this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker, this._showUpdatePopup);
             if (this._showUpdatePopup) {
-                this.ui.drawUpdatePopup(ctx, this.updateChecker.latestVersion, this.updateChecker.updateUrl);
+                this.ui.drawUpdatePopup(ctx, this.updateChecker.latestVersion, this.updateChecker.updateUrl, this.autoUpdater);
             }
             return;
         }
