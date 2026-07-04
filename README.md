@@ -87,8 +87,3 @@ Grab the latest release from the [Releases page](https://github.com/cadzer/Grave
 
 ---
 
-<div align="center">
-
-Made with HTML5 Canvas & Vanilla JavaScript
-
-</div>
