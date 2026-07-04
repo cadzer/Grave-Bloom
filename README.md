@@ -7,7 +7,7 @@
 <img src="https://i.imgur.com/QKHMWm9.png" width="600">
 
 [![Download](https://img.shields.io/badge/Download-GraveBloom--Setup.exe-brightgreen?style=for-the-badge&logo=windows)](https://github.com/cadzer/Grave-Bloom/releases/latest)
-![Version](https://img.shields.io/badge/version-1.2.1-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.2.3-blue?style=for-the-badge)
 
 </div>
 
@@ -67,9 +67,24 @@ A survivor-style action game where you play as a **Bloomkeeper** — a lone guar
 Grab the latest release from the [Releases page](https://github.com/cadzer/Grave-Bloom/releases/latest):
 
 - **GraveBloom-Setup.exe** — NSIS installer with desktop shortcut
-- **GraveBloom-v1.2.1.zip** — Portable zip (extract and run)
+- **GraveBloom-v1.2.3.zip** — Portable zip (extract and run)
 
 ## Changelog
+
+### v1.2.3
+- **Dash/Dodge** — Press Space to dash forward with invincibility frames, 1.2s cooldown
+- **Artifact Relics** — 6 rare relics drop from enemies: Thorn Ring, Blazing Trail, Magnetic Soul, Glass Cannon, Time Warp, Soul Link
+- **Thorns Reflect** — New shop upgrade: enemies take damage when they hit you
+- **Fog of War** — Toggle in Settings: limited visibility with enemies hidden in darkness
+- **Weather Effects** — Per-biome particles: rain in Grave Garden, falling leaves in Dead Forest, dust in Ash Wastes
+- **Screen Border Vines** — Thorny vines creep from screen edges when HP drops below 35%
+- **Defeated Screen** — Extended to 3.5 seconds for dramatic effect
+- **Game Over Menu Button** — Quick return to main menu from Game Over screen
+- **Untouchable Fix** — Achievement now properly tracks damage taken during boss fights
+- **First Blood Removed** — Achievement no longer tracked
+- **Auto-Update System** — In-game updates with hidden background process, no terminal windows
+- **Spawn Rate Scaling** — Enemies spawn faster every 5 minutes from game start
+- **Fog of War Setting** — Toggle in Settings for limited visibility gameplay
 
 ### v1.2.1
 - **Boss Intro Camera** — Camera smoothly pans to boss spawn location with cinematic banner, freezing gameplay for 2.5s

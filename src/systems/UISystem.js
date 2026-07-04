@@ -1724,17 +1724,24 @@ export class UISystem {
         }
 
         // Store button rects for hit testing
-        this._gameOverShopRect = { x: W / 2 - btnW - btnGap / 2, y: btnY, w: btnW, h: btnH };
-        this._gameOverRestartRect = { x: W / 2 + btnGap / 2, y: btnY, w: btnW, h: btnH };
+        const btn3W = 200;
+        const btn3Gap = 16;
+        const totalW = btnW * 2 + btnGap + btn3W + btn3Gap * 2;
+        const startX = W / 2 - totalW / 2;
+        this._gameOverShopRect = { x: startX, y: btnY, w: btnW, h: btnH };
+        this._gameOverRestartRect = { x: startX + btnW + btn3Gap, y: btnY, w: btnW, h: btnH };
+        this._gameOverMenuRect = { x: startX + btnW * 2 + btn3Gap * 2, y: btnY, w: btn3W, h: btnH };
 
         // Hover detection
         const shopHover = this.mouseX >= this._gameOverShopRect.x && this.mouseX <= this._gameOverShopRect.x + btnW &&
                           this.mouseY >= btnY && this.mouseY <= btnY + btnH;
         const restartHover = this.mouseX >= this._gameOverRestartRect.x && this.mouseX <= this._gameOverRestartRect.x + btnW &&
                             this.mouseY >= btnY && this.mouseY <= btnY + btnH;
+        const menuHover = this.mouseX >= this._gameOverMenuRect.x && this.mouseX <= this._gameOverMenuRect.x + btn3W &&
+                          this.mouseY >= btnY && this.mouseY <= btnY + btnH;
 
         // Return to Shop button
-        const shopBtnX = W / 2 - btnW - btnGap / 2;
+        const shopBtnX = startX;
         const shopScale = shopHover ? 1.08 : 1 + Math.sin(this.hudTimer * 3) * 0.015;
         const shopGlow = shopHover ? 16 : 6;
 
@@ -1769,7 +1776,7 @@ export class UISystem {
         ctx.restore();
 
         // Quick Restart button
-        const restartBtnX = W / 2 + btnGap / 2;
+        const restartBtnX = startX + btnW + btn3Gap;
         const restartScale = restartHover ? 1.08 : 1 + Math.sin(this.hudTimer * 3 + 1) * 0.015;
         const restartGlow = restartHover ? 16 : 6;
 
@@ -1800,6 +1807,41 @@ export class UISystem {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('\u2788  Restart', btnW / 2, btnH / 2);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+
+        // Main Menu button
+        const menuBtnX = startX + btnW * 2 + btn3Gap * 2;
+        const menuScale = menuHover ? 1.08 : 1 + Math.sin(this.hudTimer * 3 + 2) * 0.015;
+        const menuGlow = menuHover ? 16 : 6;
+
+        ctx.save();
+        ctx.translate(menuBtnX + btn3W / 2, btnY + btnH / 2);
+        ctx.scale(menuScale, menuScale);
+        ctx.translate(-btn3W / 2, -btnH / 2);
+
+        const menuGrad = ctx.createLinearGradient(0, 0, 0, btnH);
+        menuGrad.addColorStop(0, menuHover ? '#6b5a8a' : '#5a4a7a');
+        menuGrad.addColorStop(1, menuHover ? '#4a3a6a' : '#3a2a5a');
+        ctx.fillStyle = menuGrad;
+        ctx.beginPath();
+        ctx.roundRect(0, 0, btn3W, btnH, 25);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.beginPath();
+        ctx.roundRect(2, 2, btn3W - 4, btnH * 0.45, [23, 23, 0, 0]);
+        ctx.fill();
+
+        drawGlowBorder(ctx, -1, -1, btn3W + 2, btnH + 2, 26, '#5a4a7a', this.hudTimer, menuGlow);
+
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 4;
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold 18px ${FD}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('\u2302  Menu', btn3W / 2, btnH / 2);
         ctx.shadowBlur = 0;
         ctx.restore();
     }
@@ -2111,6 +2153,10 @@ export class UISystem {
         }
         if (buttonId === 'restart' && this._gameOverRestartRect) {
             const r = this._gameOverRestartRect;
+            return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        }
+        if (buttonId === 'menu' && this._gameOverMenuRect) {
+            const r = this._gameOverMenuRect;
             return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
         }
         return false;
@@ -4720,8 +4766,9 @@ export class UISystem {
 
     // --- Settings Screen ---
 
-    showSettings(sound) {
+    showSettings(sound, fogEnabled) {
         this.settingsScreen = { sound };
+        this._settingsFogEnabled = fogEnabled || false;
     }
 
     hideSettings() { this.settingsScreen = null; }
@@ -4907,9 +4954,54 @@ export class UISystem {
             this._settingsRects.fullscreen = { x: fsX, y: fsY, w: togW, h: togH };
         });
 
-        // --- Row 3: Reset Save ---
+        // --- Row 3: Fog of War ---
+        const isFog = this._settingsFogEnabled;
+        const fogTarget = isFog ? 1 : 0;
+        if (this._toggleAnim.fog === undefined) this._toggleAnim.fog = fogTarget;
+        this._toggleAnim.fog += (fogTarget - this._toggleAnim.fog) * 0.15;
+        if (Math.abs(this._toggleAnim.fog - fogTarget) < 0.01) this._toggleAnim.fog = fogTarget;
+
         const r3y = r2y + 80 + rowGap;
-        drawSettingsRow('Reset Save', '\uD83D\uDDD1', r3y, (rx, ry, rw, rh) => {
+        drawSettingsRow('Fog of War', '\uD83C\uDF2B\uFE0F', r3y, (rx, ry, rw, rh) => {
+            const fogX = rx + rw - padSide - togW;
+            const fogY = ry + 22;
+
+            const fogA = this._toggleAnim.fog;
+            const fogGrad = ctx.createLinearGradient(0, fogY, 0, fogY + togH);
+            fogGrad.addColorStop(0, `rgb(${Math.round(74 - fogA * 13)},${Math.round(74 + fogA * 69)},${Math.round(80 + fogA * 30)})`);
+            fogGrad.addColorStop(1, `rgb(${Math.round(58 - fogA * 19)},${Math.round(58 + fogA * 40)},${Math.round(64 + fogA * 18)})`);
+            ctx.fillStyle = fogGrad;
+            ctx.beginPath();
+            ctx.roundRect(fogX, fogY, togW, togH, togH / 2);
+            ctx.fill();
+
+            const fogCircX = fogX + circR + 4 + fogA * (togW - circR * 2 - 8);
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(fogCircX, fogY + togH / 2, circR, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.save();
+            ctx.shadowColor = 'rgba(0,0,0,0.3)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetY = 1;
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(fogCircX, fogY + togH / 2, circR, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            ctx.fillStyle = 'rgba(232,228,220,0.35)';
+            ctx.font = `500 12px ${FB}`;
+            ctx.textAlign = 'left';
+            ctx.fillText(isFog ? 'Limited visibility active' : 'Enemies appear from darkness', rx + padSide, ry + 56);
+
+            this._settingsRects.fog = { x: fogX, y: fogY, w: togW, h: togH };
+        });
+
+        // --- Row 5: Reset Save ---
+        const r4y = r3y + 80 + rowGap;
+        drawSettingsRow('Reset Save', '\uD83D\uDDD1', r4y, (rx, ry, rw, rh) => {
             const rstW = 120;
             const rstX = rx + rw - padSide - rstW;
             const rstY = ry + 22;
@@ -4940,7 +5032,7 @@ export class UISystem {
         const backW = 260;
         const backH = 56;
         const backX = (W - backW) / 2;
-        const backY = r3y + 80 + rowGap + 10;
+        const backY = r4y + 80 + rowGap + 10;
 
         this._settingsRects.back = { x: backX, y: backY, w: backW, h: backH };
 

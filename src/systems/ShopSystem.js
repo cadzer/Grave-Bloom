@@ -109,19 +109,23 @@ export class ShopSystem {
         for (const [key, cfg] of Object.entries(SHOP_UPGRADES)) {
             const lvl = this.upgradeLevels[key] || 0;
             if (lvl <= 0) continue;
-            const bonuses = cfg.effect(lvl);
-            if (bonuses.maxHpBonus) {
-                player.maxHp += bonuses.maxHpBonus;
-                player.hp = player.maxHp;
-            }
-            if (bonuses.speedMulti) {
-                player.speed = Math.floor(player.speed * bonuses.speedMulti);
-            }
-            if (bonuses.pickupMulti) {
-                player.pickupRadius = Math.floor(player.pickupRadius * bonuses.pickupMulti);
-            }
-            if (bonuses.damageMulti && weapons.globalDamageMulti !== undefined) {
-                weapons.globalDamageMulti *= bonuses.damageMulti;
+            if (cfg.apply) {
+                cfg.apply(player, lvl);
+            } else if (cfg.effect) {
+                const bonuses = cfg.effect(lvl);
+                if (bonuses.maxHpBonus) {
+                    player.maxHp += bonuses.maxHpBonus;
+                    player.hp = player.maxHp;
+                }
+                if (bonuses.speedMulti) {
+                    player.speed = Math.floor(player.speed * bonuses.speedMulti);
+                }
+                if (bonuses.pickupMulti) {
+                    player.pickupRadius = Math.floor(player.pickupRadius * bonuses.pickupMulti);
+                }
+                if (bonuses.damageMulti && weapons.globalDamageMulti !== undefined) {
+                    weapons.globalDamageMulti *= bonuses.damageMulti;
+                }
             }
         }
         if (player.damageMulti !== 1 && weapons.globalDamageMulti !== undefined) {

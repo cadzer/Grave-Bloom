@@ -32,28 +32,70 @@ export class Player {
         this.isMoving = false;
         this.breathe = 0;
         this.damageMulti = 1 + char.damageBonus;
+        this.dashTimer = 0;
+        this.dashCooldown = 0;
+        this.dashDirX = 0;
+        this.dashDirY = 0;
+        this.dashTrails = [];
+        this.thornsDamage = 0;
     }
 
-    update(dt, input) {
-        const dir = input.getMovementDirection();
-        const len = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
+    update(dt, input, canDash) {
+        if (this.dashTimer > 0) {
+            this.dashTimer -= dt;
+            this.x += this.dashDirX * PLAYER.DASH_SPEED * dt;
+            this.y += this.dashDirY * PLAYER.DASH_SPEED * dt;
+            this.invincibleTimer = Math.max(this.invincibleTimer, this.dashTimer);
+            this.dashTrails.unshift({ x: this.x, y: this.y, alpha: 1 });
+            if (this.dashTrails.length > PLAYER.DASH_TRAIL_COUNT) this.dashTrails.pop();
+            for (const t of this.dashTrails) t.alpha -= dt * 5;
+            this.dashTrails = this.dashTrails.filter(t => t.alpha > 0);
+        } else {
+            const dir = input.getMovementDirection();
+            const len = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
 
-        this.isMoving = len > 0;
+            this.isMoving = len > 0;
 
-        if (this.isMoving) {
-            this.facingX = dir.x / len;
-            this.facingY = dir.y / len;
-            this.walkCycle += dt * 10;
+            if (this.isMoving) {
+                this.facingX = dir.x / len;
+                this.facingY = dir.y / len;
+                this.walkCycle += dt * 10;
+            }
+
+            this.x += dir.x * this.speed * dt;
+            this.y += dir.y * this.speed * dt;
+            this.dashTrails = [];
         }
-
-        this.x += dir.x * this.speed * dt;
-        this.y += dir.y * this.speed * dt;
 
         this.breathe += dt * 2;
 
         if (this.invincibleTimer > 0) {
             this.invincibleTimer -= dt;
         }
+        if (this.dashCooldown > 0) {
+            this.dashCooldown -= dt;
+        }
+    }
+
+    canDash() {
+        return this.dashCooldown <= 0 && this.dashTimer <= 0;
+    }
+
+    startDash() {
+        if (!this.canDash()) return false;
+        this.dashTimer = PLAYER.DASH_DURATION;
+        this.dashCooldown = PLAYER.DASH_COOLDOWN;
+        const dir = { x: this.facingX, y: this.facingY };
+        const len = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
+        if (len > 0) {
+            this.dashDirX = dir.x / len;
+            this.dashDirY = dir.y / len;
+        } else {
+            this.dashDirX = 0;
+            this.dashDirY = -1;
+        }
+        this.invincibleTimer = PLAYER.DASH_DURATION;
+        return true;
     }
 
     takeDamage(amount) {
@@ -67,11 +109,29 @@ export class Player {
         return this.hp > 0;
     }
 
+    getThornsDamage() {
+        return this.thornsDamage;
+    }
+
     draw(ctx, cx, cy) {
         ctx.save();
 
         if (this.invincibleTimer > 0) {
             ctx.globalAlpha = 0.5 + Math.sin(this.invincibleTimer * 20) * 0.3;
+        }
+
+        // Draw dash trails
+        for (const trail of this.dashTrails) {
+            const tx = cx + (trail.x - this.x);
+            const ty = cy + (trail.y - this.y);
+            ctx.save();
+            ctx.globalAlpha = trail.alpha * 0.4;
+            ctx.translate(tx, ty);
+            ctx.fillStyle = 'rgba(184,217,78,0.5)';
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
         }
 
         const legSwing = this.isMoving ? Math.sin(this.walkCycle) * 10 : 0;

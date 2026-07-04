@@ -1,7 +1,6 @@
 const STORAGE_KEY = 'gravebloom_achievements';
 
 const ACHIEVEMENTS = [
-    { id: 'first_kill', name: 'First Blood', desc: 'Kill your first enemy', icon: '\u2620', check: (s) => s.totalKills >= 1 },
     { id: 'kill_100', name: 'Blight Reaper', desc: 'Kill 100 enemies in one run', icon: '\u2694\uFE0F', check: (s) => s.kills >= 100 },
     { id: 'kill_500', name: 'Blight Annihilator', desc: 'Kill 500 enemies in one run', icon: '\uD83D\uDD25', check: (s) => s.kills >= 500 },
     { id: 'boss_kill', name: 'Bloom Hunter', desc: 'Defeat your first boss', icon: '\uD83D\uDC79', check: (s) => s.bossesKilled >= 1 },

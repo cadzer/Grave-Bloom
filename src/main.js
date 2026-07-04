@@ -25,6 +25,10 @@ import { RunHistorySystem } from './systems/RunHistorySystem.js';
 import { AmbientSystem } from './systems/AmbientSystem.js';
 import { UpdateChecker } from './systems/UpdateChecker.js';
 import { AutoUpdater } from './systems/AutoUpdater.js';
+import { RelicSystem } from './systems/RelicSystem.js';
+import { WeatherSystem } from './systems/WeatherSystem.js';
+import { ScreenBorderEffects } from './systems/ScreenBorderEffects.js';
+import { FogOfWar } from './systems/FogOfWar.js';
 
 class Game {
     constructor() {
@@ -41,6 +45,12 @@ class Game {
         this.synergySystem = new WeaponSynergySystem();
         this.runHistory = new RunHistorySystem();
         this.ambient = new AmbientSystem();
+        this.relicSystem = new RelicSystem();
+        this.weather = new WeatherSystem();
+        this.screenBorders = new ScreenBorderEffects();
+        this.fogOfWar = new FogOfWar();
+        this._fogEnabled = localStorage.getItem('gravebloom_fog') === '1';
+        this.fogOfWar.setEnabled(this._fogEnabled);
         this.updateChecker = new UpdateChecker();
         this.autoUpdater = new AutoUpdater();
         this.updateChecker.checkForUpdates().then(() => {
@@ -69,6 +79,19 @@ class Game {
         try {
             const isFs = !!document.fullscreenElement || (typeof nw !== 'undefined' && nw.Window.get().isFullscreen);
             localStorage.setItem('gravebloom_fullscreen', isFs ? '1' : '0');
+        } catch {}
+    }
+
+    _saveSettings() {
+        try {
+            localStorage.setItem('gravebloom_fog', this._fogEnabled ? '1' : '0');
+        } catch {}
+    }
+
+    _loadSettings() {
+        try {
+            this._fogEnabled = localStorage.getItem('gravebloom_fog') === '1';
+            this.fogOfWar.setEnabled(this._fogEnabled);
         } catch {}
     }
 
@@ -188,6 +211,7 @@ class Game {
         this.weaponManager.draw(ctx, cx, cy, this.player.x, this.player.y);
 
         this.particles.draw(ctx);
+        this.weather.draw(ctx);
 
         this.player.draw(ctx, cx, cy);
         this.damageNumbers.draw(ctx, this.player.x, this.player.y);
@@ -197,6 +221,11 @@ class Game {
         ctx.restore();
 
         this.renderer.drawPostProcess(ctx, this.elapsedTime);
+
+        this.fogOfWar.drawFog(ctx, cx, cy, this.player.x, this.player.y,
+            this.spawner.getEnemies(), this.spawner.getBosses());
+
+        this.screenBorders.draw(ctx);
 
         const activeBoss = this.spawner.getLatestBoss();
         if (activeBoss && !activeBoss.dead) {
@@ -258,10 +287,15 @@ class Game {
         this.xpToNext = this.xpForLevel(1);
         this.runCoins = this.shopSystem.getStartCoins();
         this.evolutionsAchieved = [];
+        this.relicSystem.clear();
+        this.fogOfWar.setEnabled(this._fogEnabled);
         this.evolutionAnim = null;
         this.lowHealthPulse = 0;
         this.bossIntroTimer = 0;
         this.bossIntroPhase = null;
+        this._bossFightActive = false;
+        this._bossDamageTaken = false;
+        this._anyBossNoHit = false;
         this.bossIntroCamX = 0;
         this.bossIntroCamY = 0;
         this.bossIntroName = '';
@@ -292,11 +326,49 @@ class Game {
 
     setupCallbacks() {
         this.collision.onPlayerHit = (damage) => {
-            if (this.player.takeDamage(damage)) {
+            let finalDamage = damage;
+            if (this.relicSystem.hasRelic('doubleDamageDoubleTaken')) finalDamage *= 2;
+            if (this.player.takeDamage(finalDamage)) {
                 this.renderer.shake(SCREEN_SHAKE.DAMAGE_INTENSITY, SCREEN_SHAKE.DAMAGE_DURATION);
                 this.renderer.flashScreen(200, 40, 40, 0.3, 0.2);
                 this.renderer.hitStop(0.06);
                 this.sound.playPlayerHit();
+                if (this._bossFightActive) this._bossDamageTaken = true;
+
+                const thornsDmg = this.player.getThornsDamage();
+                if (thornsDmg > 0) {
+                    const allTargets = [...this.spawner.getEnemies(), ...this.spawner.getBosses()];
+                    let closest = null;
+                    let closestDist = 60 * 60;
+                    for (const t of allTargets) {
+                        if (t.dead) continue;
+                        const dx = t.x - this.player.x;
+                        const dy = t.y - this.player.y;
+                        const dSq = dx * dx + dy * dy;
+                        if (dSq < closestDist) {
+                            closestDist = dSq;
+                            closest = t;
+                        }
+                    }
+                    if (closest) {
+                        const kb = 120;
+                        const dx = closest.x - this.player.x;
+                        const dy = closest.y - this.player.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                        closest.takeDamage(thornsDmg, (dx / dist) * kb, (dy / dist) * kb);
+                        this.damageNumbers.addWithColor(closest.x, closest.y - 40, thornsDmg, '#8b3a62');
+                        const esx = closest.x - this.player.x + GAME.WIDTH / 2;
+                        const esy = closest.y - this.player.y + GAME.HEIGHT / 2;
+                        this.particles.ring(esx, esy, 30, 10, '#8b3a62', 0.4, 3);
+                        if (closest.dead) {
+                            if (closest.isBoss) {
+                                this.weaponCallbacks.onBossKilled(closest);
+                            } else {
+                                this.weaponCallbacks.onEnemyKilled(closest);
+                            }
+                        }
+                    }
+                }
             }
         };
 
@@ -304,6 +376,9 @@ class Game {
             onEnemyHit: (enemy, damage, x, y) => {
                 this.damageNumbers.add(x, y - 40, damage);
                 this.sound.playEnemyHit();
+                if (this.relicSystem.hasRelic('lifesteal')) {
+                    this.player.hp = Math.min(this.player.hp + damage * 0.15, this.player.maxHp);
+                }
             },
             onEnemyKilled: (enemy) => {
                 this.kills++;
@@ -317,6 +392,11 @@ class Game {
                 const esy = enemy.y - this.player.y + GAME.HEIGHT / 2;
                 this.particles.deathBurst(esx, esy, enemy.type);
                 this.sound.playEnemyDeath();
+                const relic = this.relicSystem.tryDropRelic(this.level);
+                if (relic) {
+                    this.ui.showAnnouncement(`Relic Found: ${relic.name}`, relic.desc);
+                    this.sound.playChestOpen();
+                }
                 if (enemy.type === 'barkfell' || enemy.type === 'revenant') {
                     this.renderer.hitStop(0.04);
                 }
@@ -336,6 +416,8 @@ class Game {
             onBossKilled: (boss) => {
                 this.kills++;
                 this.bossesKilled++;
+                if (this._bossFightActive && !this._bossDamageTaken) this._anyBossNoHit = true;
+                this._bossFightActive = false;
                 this.spawner.removeBoss(boss);
                 this.chests.push(new TreasureChest(boss.x, boss.y));
                 this.runCoins += COINS.BOSS_DROP;
@@ -418,7 +500,7 @@ class Game {
                 }
                 if (this.ui.isMenuButtonAt(mx, my, 'settings')) {
                     this.gameState = 'settings';
-                    this.ui.showSettings(this.sound);
+                    this.ui.showSettings(this.sound, this._fogEnabled);
                     return;
                 }
                 if (this.ui.isMenuButtonAt(mx, my, 'tutorial')) {
@@ -494,7 +576,7 @@ class Game {
             if (this.gameState === 'settings') {
                 if (this.ui.isSettingsButtonAt(mx, my, 'mute')) {
                     this.sound.toggleMute();
-                    this.ui.showSettings(this.sound);
+                    this.ui.showSettings(this.sound, this._fogEnabled);
                     return;
                 }
                 if (this.ui.isSettingsButtonAt(mx, my, 'fullscreen')) {
@@ -503,8 +585,15 @@ class Game {
                     } else {
                         this._enterFullscreen();
                     }
-                    this._saveFullscreen();
-                    this.ui.showSettings(this.sound);
+                    setTimeout(() => this._saveFullscreen(), 200);
+                    this.ui.showSettings(this.sound, this._fogEnabled);
+                    return;
+                }
+                if (this.ui.isSettingsButtonAt(mx, my, 'fog')) {
+                    this._fogEnabled = !this._fogEnabled;
+                    this.fogOfWar.setEnabled(this._fogEnabled);
+                    this._saveSettings();
+                    this.ui.showSettings(this.sound, this._fogEnabled);
                     return;
                 }
                 if (this.ui.isSettingsButtonAt(mx, my, 'reset')) {
@@ -529,13 +618,13 @@ class Game {
                     this.ui.hideResetConfirm();
                     this.ui.showResetNotify();
                     this.gameState = 'settings';
-                    this.ui.showSettings(ctx, this.sound);
+                    this.ui.showSettings(this.sound, this._fogEnabled);
                     return;
                 }
                 if (this.ui.isResetConfirmButtonAt(mx, my, 'no')) {
                     this.ui.hideResetConfirm();
                     this.gameState = 'settings';
-                    this.ui.showSettings(ctx, this.sound);
+                    this.ui.showSettings(this.sound, this._fogEnabled);
                     return;
                 }
                 return;
@@ -637,6 +726,13 @@ class Game {
                     this.startRun();
                     return;
                 }
+                if (this.ui.isShopButtonAt(mx, my, 'menu')) {
+                    this.shopSystem.addRunCoins(this.runCoins);
+                    this.gameState = 'menu';
+                    this.ui.showMenu();
+                    this.ui.hideGameOver();
+                    return;
+                }
                 return;
             }
 
@@ -649,7 +745,7 @@ class Game {
                 if (this.ui.isPauseButtonAt(mx, my, 'settings')) {
                     this.gameState = 'pausesettings';
                     this.ui.hidePause();
-                    this.ui.showSettings(this.sound);
+                    this.ui.showSettings(this.sound, this._fogEnabled);
                     return;
                 }
                 if (this.ui.isPauseButtonAt(mx, my, 'menu')) {
@@ -664,7 +760,7 @@ class Game {
             if (this.gameState === 'pausesettings') {
                 if (this.ui.isSettingsButtonAt(mx, my, 'mute')) {
                     this.sound.toggleMute();
-                    this.ui.showSettings(this.sound);
+                    this.ui.showSettings(this.sound, this._fogEnabled);
                     return;
                 }
                 if (this.ui.isSettingsButtonAt(mx, my, 'fullscreen')) {
@@ -673,8 +769,15 @@ class Game {
                     } else {
                         this._enterFullscreen();
                     }
-                    this._saveFullscreen();
-                    this.ui.showSettings(this.sound);
+                    setTimeout(() => this._saveFullscreen(), 200);
+                    this.ui.showSettings(this.sound, this._fogEnabled);
+                    return;
+                }
+                if (this.ui.isSettingsButtonAt(mx, my, 'fog')) {
+                    this._fogEnabled = !this._fogEnabled;
+                    this.fogOfWar.setEnabled(this._fogEnabled);
+                    this._saveSettings();
+                    this.ui.showSettings(this.sound, this._fogEnabled);
                     return;
                 }
                 if (this.ui.isSettingsButtonAt(mx, my, 'reset')) {
@@ -823,7 +926,7 @@ class Game {
                 if (this.gameState === 'resetconfirm') {
                     this.ui.hideResetConfirm();
                     this.gameState = 'settings';
-                    this.ui.showSettings(this.sound);
+                    this.ui.showSettings(this.sound, this._fogEnabled);
                     return;
                 }
                 if (this.gameState === 'shopresetconfirm') {
@@ -1030,7 +1133,20 @@ class Game {
         }
 
         this.elapsedTime += dt;
+
+        if (this.relicSystem.hasRelic('doubleDamageDoubleTaken')) {
+            this.player.damageMulti = 2;
+        }
+
+        if (this.input.isKeyDown('Space') && this.player.canDash()) {
+            this.player.startDash();
+        }
+
         this.player.update(dt, this.input);
+        this.relicSystem.update(dt);
+        this.weather.setBiome(this.renderer.getBiomeIndex(this.elapsedTime));
+        this.weather.update(dt);
+        this.screenBorders.update(dt, this.player.hp / this.player.maxHp);
         this.structures.update(this.player.x, this.player.y);
 
         const playerColliders = this.structures.getColliders(this.player.x, this.player.y);
@@ -1058,7 +1174,8 @@ class Game {
         const pickupR2 = this.player.pickupRadius * this.player.pickupRadius;
 
         for (const gem of this.gems) {
-            gem.update(dt, this.player.x, this.player.y, this.player.magnetRadius);
+            const magnetR = this.relicSystem.hasRelic('globalMagnet') ? GAME.WIDTH : this.player.magnetRadius;
+            gem.update(dt, this.player.x, this.player.y, magnetR);
 
             const dx = this.player.x - gem.x;
             const dy = this.player.y - gem.y;
@@ -1115,9 +1232,12 @@ class Game {
         this.chests.length = writeIdx;
 
         this.spawner.update(dt, this.player.x, this.player.y, this.elapsedTime);
+        this.spawner._speedMulti = this.relicSystem.hasRelic('slowEnemies') ? 0.75 : 1;
         this.spawner.updateSpecialBehaviors(dt, this.player.x, this.player.y);
         if (this.spawner.bossJustSpawned) {
             this.spawner.bossJustSpawned = false;
+            this._bossFightActive = true;
+            this._bossDamageTaken = false;
             const latestBoss = this.spawner.getLatestBoss();
             if (latestBoss) {
                 this.bossIntroTimer = 2.5;
@@ -1214,7 +1334,7 @@ class Game {
                 this.particles.deathBurst(GAME.WIDTH / 2, GAME.HEIGHT / 2, 'spore');
             } else {
                 this.gameState = 'deathslowmo';
-                this.deathSlowmoTimer = 1.5;
+                this.deathSlowmoTimer = 3.5;
                 this.sound.playGameOver();
 
                 const runStats = {
@@ -1226,7 +1346,7 @@ class Game {
                     totalCoins: this.shopSystem.totalCoins,
                     weaponsOwned: this.weaponManager.weapons.length,
                     evolutions: this.evolutionsAchieved.length,
-                    bossKillNoHit: false
+                    bossKillNoHit: this._anyBossNoHit
                 };
 
                 this.runHistory.addRun(runStats);
@@ -1368,7 +1488,7 @@ class Game {
         }
 
         if (this.gameState === 'deathslowmo') {
-            const alpha = Math.min(0.6, (1.5 - this.deathSlowmoTimer) / 1.5 * 0.6);
+            const alpha = Math.min(0.6, (3.5 - this.deathSlowmoTimer) / 3.5 * 0.6);
             ctx.fillStyle = `rgba(180,30,30,${alpha})`;
             ctx.fillRect(0, 0, GAME.WIDTH, GAME.HEIGHT);
             ctx.font = `bold 64px ${'Rajdhani'}`;

@@ -20,6 +20,19 @@ export class DamageNumbers {
         });
     }
 
+    addWithColor(x, y, value, color) {
+        this.numbers.push({
+            x,
+            y,
+            value,
+            timer: DAMAGE_NUMBERS.LIFETIME,
+            vy: DAMAGE_NUMBERS.RISE_SPEED,
+            vx: (Math.random() - 0.5) * 40,
+            scale: value >= DAMAGE_NUMBERS.CRIT_THRESHOLD ? 1.4 : 1.0,
+            color
+        });
+    }
+
     update(dt) {
         let writeIdx = 0;
         for (let i = 0; i < this.numbers.length; i++) {

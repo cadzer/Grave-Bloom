@@ -1,7 +1,7 @@
 // Central config for all game constants.
 // Change values here instead of hunting through multiple files.
 
-export const VERSION = '1.2.2';
+export const VERSION = '1.2.3';
 export const GITHUB_REPO = 'cadzer/Grave-Bloom';
 
 export const GAME = {
@@ -23,7 +23,11 @@ export const PLAYER = {
     HEAD_COLOR: '#2c3e50',
     BODY_COLOR: '#34495e',
     EYE_COLOR: '#ecf0f1',
-    MOUTH_COLOR: '#e74c3c'
+    MOUTH_COLOR: '#e74c3c',
+    DASH_SPEED: 500,
+    DASH_DURATION: 0.2,
+    DASH_COOLDOWN: 1.2,
+    DASH_TRAIL_COUNT: 5
 };
 
 export const CHARACTERS = {
@@ -1045,5 +1049,15 @@ export const SHOP_UPGRADES = {
         costMultiplier: 2.5,
         maxLevel: 5,
         effect: (lvl) => ({ startCoins: lvl * 10 })
+    },
+    thorns: {
+        name: 'Thorn Guard',
+        description: 'Enemies take damage when they hit you',
+        icon: '\uD83C\uDF39',
+        color: '#8b3a62',
+        baseCost: 400,
+        costMultiplier: 1.6,
+        maxLevel: 3,
+        apply: (player, lvl) => { player.thornsDamage = lvl * 10; }
     }
 };

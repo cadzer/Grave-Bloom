@@ -58,16 +58,24 @@ export class Spawner {
             }
         }
 
+        const totalMinutes = elapsedTime / 60;
+        const fiveMinIntervals = totalMinutes / 5;
+        if (fiveMinIntervals > 0) {
+            stage = {
+                ...stage,
+                spawnRate: Math.max(
+                    WAVES.MIN_SPAWN_RATE,
+                    stage.spawnRate * Math.pow(0.80, fiveMinIntervals)
+                )
+            };
+        }
+
         if (elapsedTime >= stages[stages.length - 1].start) {
             const extraMinutes = (elapsedTime - stages[stages.length - 1].start) / 60;
             stage = {
                 ...stage,
                 hpMul: stage.hpMul + extraMinutes * WAVES.HP_SCALE_PER_MIN,
-                spdMul: stage.spdMul + extraMinutes * WAVES.SPEED_SCALE_PER_MIN,
-                spawnRate: Math.max(
-                    WAVES.MIN_SPAWN_RATE,
-                    stage.spawnRate * Math.pow(0.95, extraMinutes)
-                )
+                spdMul: stage.spdMul + extraMinutes * WAVES.SPEED_SCALE_PER_MIN
             };
         }
 
@@ -110,6 +118,7 @@ export class Spawner {
                 this.enemies.pop();
                 continue;
             }
+            e._speedMulti = this._speedMulti || 1;
             const dx = e.x - playerX;
             const dy = e.y - playerY;
             if (dx * dx + dy * dy > despawnDistSq) {

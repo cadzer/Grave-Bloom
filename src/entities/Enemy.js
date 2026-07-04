@@ -47,8 +47,9 @@ export class Enemy {
         if (!this.disguised) {
             const dist = Math.sqrt(distSq);
             if (dist > 0) {
-                this.x += (dx / dist) * this.speed * dt;
-                this.y += (dy / dist) * this.speed * dt;
+                const speedMulti = this._speedMulti || 1;
+                this.x += (dx / dist) * this.speed * speedMulti * dt;
+                this.y += (dy / dist) * this.speed * speedMulti * dt;
             }
         }
 
@@ -1385,4 +1386,5 @@ export class Enemy {
         ctx.roundRect(barX, y, w * pct, h, 2);
         ctx.fill();
     }
+
 }
