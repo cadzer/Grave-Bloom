@@ -132,17 +132,25 @@ async function download(url, dest) {
             '@echo off\nstart "" "%~dp0GraveBloom.exe" "%~dp0"\n'
         );
 
-        // Step 8: Build installer exe
-        console.log('\nStep 8: Building installer...');
+        // Step 8: Build NSIS installer
+        console.log('\nStep 8: Building NSIS installer...');
         const installerDir = path.join(__dirname, 'installer');
-        if (fs.existsSync(path.join(installerDir, 'install.js'))) {
+        const nsisExe = path.join(installerDir, 'nsis', 'nsis-3.10', 'Bin', 'makensis.exe');
+        const nsisScript = path.join(installerDir, 'installer.nsi');
+        const nsisDist = path.join(installerDir, 'dist');
+        if (fs.existsSync(nsisExe) && fs.existsSync(nsisScript)) {
             try {
-                execSync(`cd "${installerDir}" && npx pkg . --targets node18-win-x64 --output "${path.join(BUILD_DIR, 'GraveBloom-Installer.exe')}"`, { stdio: 'pipe' });
-                console.log('  Installer built: build/GraveBloom-Installer.exe');
-            } catch {
-                console.log('  Could not build installer exe (pkg not available)');
-                console.log('  To build manually: cd installer && npm run build');
+                // Copy game files to installer/dist/
+                if (fs.existsSync(nsisDist)) fs.rmSync(nsisDist, { recursive: true });
+                fs.cpSync(runtimeDir, nsisDist, { recursive: true });
+                // Build with NSIS
+                execSync(`"${nsisExe}" "${nsisScript}"`, { stdio: 'pipe' });
+                console.log('  Installer built: build/GraveBloom-Setup.exe');
+            } catch (e) {
+                console.log('  NSIS build failed:', e.message);
             }
+        } else {
+            console.log('  NSIS not found, skipping installer');
         }
 
         // Step 9: Create release zip for GitHub
@@ -164,7 +172,7 @@ async function download(url, dest) {
         console.log('  - Or run Launch Grave Bloom.bat');
         console.log('');
         console.log('Installer:');
-        console.log('  - build/GraveBloom-Installer.exe (if pkg is installed)');
+        console.log('  - build/GraveBloom-Setup.exe (NSIS graphical installer)');
         console.log('');
         console.log('To rebuild after edits: npm run build');
         console.log('========================================');
