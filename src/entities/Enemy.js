@@ -1280,7 +1280,7 @@ export class Enemy {
         ctx.scale(breathe, breathe);
 
         // Shield aura with pulsing opacity
-        if (this.shieldRadius > 0) {
+        if (this.shieldRadius > 0 && !this._isTutorial) {
             const pulse = 0.2 + Math.sin(this.animTimer * 2.5) * 0.12;
             ctx.strokeStyle = `rgba(160,208,255,${pulse})`;
             ctx.lineWidth = 2;

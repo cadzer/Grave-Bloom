@@ -3828,10 +3828,10 @@ export class UISystem {
         ctx.font = `500 16px ${FB}`;
         ctx.fillText('Move with WASD or Arrow Keys \u2022 Weapons fire automatically', cx, py + 72);
 
-        // Keyboard diagram
+        // WASD keyboard diagram
         const keySize = 52;
         const keyGap = 6;
-        const kbX = cx - keySize * 1.7;
+        const kbX = cx - keySize * 1.7 - 80;
         const kbY = py + 110;
 
         const keys = [
@@ -3859,7 +3859,37 @@ export class UISystem {
         ctx.font = `500 14px ${FB}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillText('or Arrow Keys', kbX + keySize * 1.5, kbY + keySize * 2 + keyGap + 8);
+        ctx.fillText('WASD', kbX + keySize * 1.5, kbY + keySize * 2 + keyGap + 8);
+
+        // Arrow key diagram
+        const akbX = cx + 30;
+        const akbY = py + 110;
+        const arrowKeys = [
+            { label: '\u2191', x: 1, y: 0, color: '#5a6f8c' },
+            { label: '\u2190', x: 0, y: 1, color: '#5a6f8c' },
+            { label: '\u2193', x: 1, y: 1, color: '#5a6f8c' },
+            { label: '\u2192', x: 2, y: 1, color: '#5a6f8c' },
+        ];
+
+        for (const key of arrowKeys) {
+            const kx = akbX + key.x * (keySize + keyGap);
+            const ky = akbY + key.y * (keySize + keyGap);
+            ctx.fillStyle = key.color;
+            ctx.beginPath();
+            ctx.roundRect(kx, ky, keySize, keySize, 8);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = `bold 24px ${FD}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(key.label, kx + keySize / 2, ky + keySize / 2);
+        }
+
+        ctx.fillStyle = 'rgba(232,228,220,0.35)';
+        ctx.font = `500 14px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('Arrow Keys', akbX + keySize * 1.5, akbY + keySize * 2 + keyGap + 8);
 
         // Game concepts
         const concepts = [
@@ -3938,58 +3968,21 @@ export class UISystem {
             ctx.shadowColor = w.color;
             ctx.shadowBlur = 10;
 
-            if (weaponKeys[i] === 'arcane_bolt') {
-                const grad = ctx.createLinearGradient(iconX, iconY - iconSize / 2, iconX, iconY + iconSize / 2);
-                grad.addColorStop(0, w.secondaryColor);
-                grad.addColorStop(1, w.color);
-                ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.ellipse(iconX + iconSize / 2, iconY + iconSize / 2, 10, 20, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#fff';
-                ctx.globalAlpha = 0.6;
-                ctx.beginPath();
-                ctx.ellipse(iconX + iconSize / 2 + 2, iconY + iconSize / 2 - 3, 3, 6, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1;
-            } else if (weaponKeys[i] === 'orbiting_blade') {
-                ctx.strokeStyle = w.color;
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(iconX + iconSize / 2, iconY + iconSize / 2, 18, 0, Math.PI * 2);
-                ctx.stroke();
-                for (let a = 0; a < 4; a++) {
-                    const angle = (a / 4) * Math.PI * 2 + t * 1.5;
-                    const bx = iconX + iconSize / 2 + Math.cos(angle) * 18;
-                    const by = iconY + iconSize / 2 + Math.sin(angle) * 18;
-                    ctx.fillStyle = w.color;
-                    ctx.beginPath();
-                    ctx.moveTo(bx, by - 8);
-                    ctx.lineTo(bx - 4, by + 2);
-                    ctx.lineTo(bx + 4, by + 2);
-                    ctx.closePath();
-                    ctx.fill();
-                }
-            } else if (weaponKeys[i] === 'holy_pulse') {
-                const pr = 12 + Math.sin(t * 3) * 3;
-                const grad = ctx.createRadialGradient(iconX + iconSize / 2, iconY + iconSize / 2, 0, iconX + iconSize / 2, iconY + iconSize / 2, pr + 8);
-                grad.addColorStop(0, '#fff');
-                grad.addColorStop(0.3, w.secondaryColor);
-                grad.addColorStop(1, w.color + '00');
-                ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.arc(iconX + iconSize / 2, iconY + iconSize / 2, pr + 8, 0, Math.PI * 2);
-                ctx.fill();
-            } else if (weaponKeys[i] === 'lightning_mark') {
-                ctx.strokeStyle = w.color;
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(iconX + iconSize / 2, iconY + 2);
-                ctx.lineTo(iconX + iconSize / 2 + 5, iconY + iconSize / 2 - 5);
-                ctx.lineTo(iconX + iconSize / 2 - 3, iconY + iconSize / 2);
-                ctx.lineTo(iconX + iconSize / 2 + 2, iconY + iconSize - 2);
-                ctx.stroke();
-            }
+            const weaponIcons = {
+                arcane_bolt: '\u2728',
+                orbiting_blade: '\uD83D\uDD2E',
+                holy_pulse: '\u2764\uFE0F',
+                lightning_mark: '\u26A1',
+                spore_swarm: '\uD83C\uDF44'
+            };
+            ctx.fillStyle = w.color;
+            ctx.beginPath();
+            ctx.roundRect(iconX, iconY, iconSize, iconSize, 10);
+            ctx.fill();
+            ctx.font = `32px ${FD}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(weaponIcons[weaponKeys[i]] || '\u2694\uFE0F', iconX + iconSize / 2, iconY + iconSize / 2);
             ctx.shadowBlur = 0;
             ctx.restore();
 
@@ -4156,14 +4149,14 @@ export class UISystem {
 
         const enemies = [
             { type: 'spore', name: 'Spore', role: 'Swarm', roleColor: '#7c9a6e', spawn: '0:00', desc: 'Slow-moving fungal blob. Weak alone but dangerous in groups.' },
-            { type: 'wisp', name: 'Wisp', role: 'Scout', roleColor: '#7b5ea7', spawn: '0:30', desc: 'Fast, fragile spirit. Darts toward you quickly but goes down easy.' },
-            { type: 'rootcrawler', name: 'Rootcrawler', role: 'Stalker', roleColor: '#c0703a', spawn: '1:15', desc: 'Wiry root creature with moderate speed. Tricky to dodge in crowds.' },
-            { type: 'barkfell', name: 'Barkfell', role: 'Brute', roleColor: '#8b4513', spawn: '1:15', desc: 'Massive bark-covered brute. Slow but hits extremely hard.' },
-            { type: 'revenant', name: 'Revenant', role: 'Elite', roleColor: '#b8d94e', spawn: '2:00', desc: 'Armored knight with high HP and damage. Mini-boss tier foe.' },
-            { type: 'leech', name: 'Leech', role: 'Healer', roleColor: '#ff6b9d', spawn: '5:00', desc: 'Heals nearby Blighted over time. Kill it first to stop its support!' },
-            { type: 'mimic', name: 'Mimic', role: 'Trickster', roleColor: '#e74c3c', spawn: '6:00', desc: 'Disguised as an XP gem. Reveals its true form when you approach.' },
-            { type: 'hive', name: 'Hive', role: 'Splitter', roleColor: '#c4a23a', spawn: '6:00', desc: 'Honeycomb body that bursts into 3 smaller foes when slain.' },
-            { type: 'warden', name: 'Warden', role: 'Guardian', roleColor: '#a0d0ff', spawn: '6:00', desc: 'Shields nearby enemies, reducing their damage taken by 50%.' },
+            { type: 'wisp', name: 'Wisp', role: 'Scout', roleColor: '#7b5ea7', spawn: '1:40', desc: 'Fast, fragile spirit. Darts toward you quickly but goes down easy.' },
+            { type: 'rootcrawler', name: 'Rootcrawler', role: 'Stalker', roleColor: '#c0703a', spawn: '4:10', desc: 'Wiry root creature with moderate speed. Tricky to dodge in crowds.' },
+            { type: 'barkfell', name: 'Barkfell', role: 'Brute', roleColor: '#8b4513', spawn: '6:40', desc: 'Massive bark-covered brute. Slow but hits extremely hard.' },
+            { type: 'revenant', name: 'Revenant', role: 'Elite', roleColor: '#b8d94e', spawn: '13:20', desc: 'Armored knight with high HP and damage. Mini-boss tier foe.' },
+            { type: 'leech', name: 'Leech', role: 'Healer', roleColor: '#ff6b9d', spawn: '16:40', desc: 'Heals nearby Blighted over time. Kill it first to stop its support!' },
+            { type: 'hive', name: 'Hive', role: 'Splitter', roleColor: '#c4a23a', spawn: '16:40', desc: 'Honeycomb body that bursts into 3 smaller foes when slain.' },
+            { type: 'mimic', name: 'Mimic', role: 'Trickster', roleColor: '#e74c3c', spawn: '20:00', desc: 'Disguised as an XP gem. Reveals its true form when you approach.' },
+            { type: 'warden', name: 'Warden', role: 'Guardian', roleColor: '#a0d0ff', spawn: '20:00', desc: 'Shields nearby enemies, reducing their damage taken by 50%.' },
         ];
 
         const rowH = 82;
@@ -4192,10 +4185,13 @@ export class UISystem {
             // Enemy sprite
             ctx.save();
             ctx.translate(px + padX + spriteAreaW / 2 + 8, ry + (rowH - 8) / 2);
-            const spriteScale = 36 / (cfg.collisionRadius + 4);
-            ctx.scale(spriteScale, spriteScale);
-            const enemy = this.makeTutorialEnemy(e.type);
-            if (enemy) enemy.draw(ctx);
+        const spriteScale = 36 / (cfg.collisionRadius + 4);
+        ctx.scale(spriteScale, spriteScale);
+        const enemy = this.makeTutorialEnemy(e.type);
+        if (enemy) {
+            enemy._isTutorial = true;
+            enemy.draw(ctx);
+        }
             ctx.restore();
 
             // Info area
@@ -4353,18 +4349,29 @@ export class UISystem {
             const arrowX2 = cx2 + cardW - 48;
 
             // Base weapon icon (left)
+            const baseIcons = {
+                arcane_bolt: '\u2728',
+                orbiting_blade: '\uD83D\uDD2E',
+                holy_pulse: '\u2764\uFE0F',
+                lightning_mark: '\u26A1',
+                spore_swarm: '\uD83C\uDF44'
+            };
+            const evoIcons = {
+                arcane_storm: '\uD83C\uDF3F',
+                celestial_blades: '\u26A1',
+                divine_nova: '\uD83C\uDF3F',
+                thunder_crown: '\uD83D\uDC51',
+                blight_plague: '\uD83C\uDF44'
+            };
             ctx.fillStyle = baseW.color;
             ctx.beginPath();
             ctx.roundRect(cx2 + 18, cy2 + 14, 60, 60, 8);
             ctx.fill();
-            ctx.font = '24px sans-serif';
+            ctx.font = `28px ${FD}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = '#fff';
-            if (evo.baseWeaponId === 'arcane_bolt') ctx.fillText('\uD83C\uDF31', cx2 + 48, cy2 + 44);
-            else if (evo.baseWeaponId === 'orbiting_blade') ctx.fillText('\uD83C\uDF39', cx2 + 48, cy2 + 44);
-            else if (evo.baseWeaponId === 'holy_pulse') ctx.fillText('\uD83C\uDF3B', cx2 + 48, cy2 + 44);
-            else if (evo.baseWeaponId === 'lightning_mark') ctx.fillText('\u26A1', cx2 + 48, cy2 + 44);
+            ctx.fillText(baseIcons[evo.baseWeaponId] || '\u2694\uFE0F', cx2 + 48, cy2 + 44);
 
             // Arrow
             ctx.strokeStyle = '#b8d94e';
@@ -4386,11 +4393,8 @@ export class UISystem {
             ctx.roundRect(cx2 + cardW - 78, cy2 + 14, 60, 60, 8);
             ctx.fill();
             ctx.fillStyle = '#fff';
-            ctx.font = '24px sans-serif';
-            if (evoKeys[i] === 'arcane_storm') ctx.fillText('\uD83C\uDF3F', cx2 + cardW - 48, cy2 + 44);
-            else if (evoKeys[i] === 'celestial_blades') ctx.fillText('\uD83C\uDFF4', cx2 + cardW - 48, cy2 + 44);
-            else if (evoKeys[i] === 'divine_nova') ctx.fillText('\uD83C\uDF2C\uFE0F', cx2 + cardW - 48, cy2 + 44);
-            else if (evoKeys[i] === 'thunder_crown') ctx.fillText('\uD83D\uDC51', cx2 + cardW - 48, cy2 + 44);
+            ctx.font = `28px ${FD}`;
+            ctx.fillText(evoIcons[evoKeys[i]] || '\u2B50', cx2 + cardW - 48, cy2 + 44);
 
             // Names
             ctx.fillStyle = '#e8e4dc';
