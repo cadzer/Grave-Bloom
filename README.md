@@ -7,7 +7,7 @@
 <img src="https://i.imgur.com/QKHMWm9.png" width="600">
 
 [![Download](https://img.shields.io/badge/Download-GraveBloom--Setup.exe-brightgreen?style=for-the-badge&logo=windows)](https://github.com/cadzer/Grave-Bloom/releases/latest)
-![Version](https://img.shields.io/badge/version-1.2.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.2.1-blue?style=for-the-badge)
 
 </div>
 
@@ -67,7 +67,23 @@ A survivor-style action game where you play as a **Bloomkeeper** — a lone guar
 Grab the latest release from the [Releases page](https://github.com/cadzer/Grave-Bloom/releases/latest):
 
 - **GraveBloom-Setup.exe** — NSIS installer with desktop shortcut
-- **GraveBloom-v1.2.0.zip** — Portable zip (extract and run)
+- **GraveBloom-v1.2.1.zip** — Portable zip (extract and run)
+
+## Changelog
+
+### v1.2.1
+- **Boss Intro Camera** — Camera smoothly pans to boss spawn location with cinematic banner, freezing gameplay for 2.5s
+- **Menu Backgrounds** — Shop, Achievements, and Tutorial screens now use the graveyard menu background with blur overlay
+- **Exit Confirmation** — Menu blur + hover disabled when quit confirmation dialog is open
+- **Debug Password** — Menu blur + hover disabled when debug password dialog is open
+- **Pause Menu** — ESC opens pause with Resume, Settings, Main Menu; confirmation dialog for quitting
+- **Loadout Back Button** — Consistent hover animation matching character select screen
+- **Tutorial Updates** — Arrow key diagram, emoji weapon icons matching in-game, updated enemy spawn times, evolution icons with Blight Plague
+- **Level-Up Card Fix** — Description text now word-wraps to fit inside card bounds
+- **Save Reset** — Now clears achievements, run history, and locked loadouts
+- **Potion Spawning** — Potions only spawn when below full health, reduced spawn rate
+- **Balance** — Enemy HP doubled, late-game stages pushed to ~20 minutes
+- **Performance** — Shadow blur removed from gameplay, batched particle rendering, optimized ambient effects
 
 ---
 
