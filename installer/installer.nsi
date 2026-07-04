@@ -6,7 +6,7 @@
 
 Name "Grave Bloom"
 OutFile "..\build\GraveBloom-Setup.exe"
-InstallDir "$LOCALAPPDATA\Grave Bloom"
+InstallDir "C:\Games\GraveBloom"
 InstallDirRegKey HKCU "Software\GraveBloom" "InstallDir"
 RequestExecutionLevel user
 
