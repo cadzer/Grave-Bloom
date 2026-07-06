@@ -7,7 +7,7 @@
 <img src="https://i.imgur.com/QKHMWm9.png" width="600">
 
 [![Download](https://img.shields.io/badge/Download-GraveBloom--Setup.exe-brightgreen?style=for-the-badge&logo=windows)](https://github.com/cadzer/Grave-Bloom/releases/latest)
-![Version](https://img.shields.io/badge/version-1.3.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.3.1-blue?style=for-the-badge)
 
 </div>
 
@@ -70,6 +70,12 @@ Grab the latest release from the [Releases page](https://github.com/cadzer/Grave
 - **GraveBloom-v1.2.3.zip** — Portable zip (extract and run)
 
 ## Changelog
+
+### v1.3.1
+- **Menu Layout** — Main menu buttons centered with equal column widths, no text clipping
+- **Changelog** — Moved to main menu alongside Discord button, scrollable with mouse wheel
+- **Tutorial Controls** — Added Space bar (Dash) and number keys 1-2-3 (Level-Up choices)
+- **Discord Button** — Icon and text centered within button
 
 ### v1.2.3
 - **Dash/Dodge** — Press Space to dash forward with invincibility frames, 1.2s cooldown

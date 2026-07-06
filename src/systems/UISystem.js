@@ -3040,7 +3040,6 @@ export class UISystem {
         ];
         const rightBtns = [
             { id: 'achievements', label: '\uD83C\uDFC6  Achievements', color1: '#6a5a3a', color2: '#4a3a22', glow: '#c4a23a' },
-            { id: 'changelog', label: '\uD83D\uDCDD  Changelog', color1: '#3a5a6a', color2: '#2a3d52', glow: '#5a8fcf' },
             { id: 'tutorial', label: '\uD83D\uDCD6  Tutorial', color1: '#5a6f8c', color2: '#3d5270', glow: '#5a8fcf' },
             { id: 'settings', label: '\u2699\uFE0F  Settings', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' },
         ];
@@ -3048,44 +3047,51 @@ export class UISystem {
             { id: 'exit', label: '\uD83D\uDEAA  Exit', color1: '#3a2a30', color2: '#2a1a22', glow: '#8b3a62' },
         ];
 
-        // Measure text widths for column widths
-        ctx.font = `500 16px ${FB}`;
-        const leftBtnW = ctx.measureText('\uD83C\uDF3F  Bloomkeeper\'s Sanctum').width + 50;
-        const rightBtnW = ctx.measureText('\uD83D\uDCDD  Changelog').width + 50;
-        const rightBtnH = 52;
-        const rightColH = rightBtns.length * rightBtnH + (rightBtns.length - 1) * 14;
-        const btnGap = 14;
+        // Measure text widths using the actual rendering fonts
+        ctx.font = `bold 24px ${FD}`;
+        const beginTextW = ctx.measureText('\u2728  Begin Bloom').width;
+        ctx.font = `600 17px ${FD}`;
+        const sanctumTextW = ctx.measureText('\uD83C\uDF3F  Bloomkeeper\'s Sanctum').width;
+        const achTextW = ctx.measureText('\uD83C\uDFC6  Achievements').width;
+        const tutTextW = ctx.measureText('\uD83D\uDCD6  Tutorial').width;
+        const setTextW = ctx.measureText('\u2699\uFE0F  Settings').width;
 
+        const btnPadX = 50;
+        const leftBtnW = Math.max(beginTextW, sanctumTextW) + btnPadX;
+        const rightBtnW = Math.max(achTextW, tutTextW, setTextW) + btnPadX;
+        const colBtnW = Math.max(leftBtnW, rightBtnW);
+
+        const rightBtnH = 52;
+        const btnGap = 14;
         const leftBtnH1 = 108;
         const leftBtnH2 = 62;
-        const colGap = 30;
+        const colGap = 40;
 
+        const rightColH = rightBtns.length * rightBtnH + (rightBtns.length - 1) * btnGap;
         const leftColH = leftBtnH1 + leftBtnH2 + btnGap;
         const maxColH = Math.max(leftColH, rightColH);
 
         const topMargin = divY + 24;
-        const totalColW = leftBtnW + rightBtnW + colGap;
+        const totalColW = colBtnW * 2 + colGap;
         const colStartX = (W - totalColW) / 2;
         const leftColX = colStartX;
-        const rightColX = colStartX + leftBtnW + colGap;
+        const rightColX = colStartX + colBtnW + colGap;
         const colTop = topMargin;
 
-        this._drawMenuButton(ctx, leftColX, colTop, leftBtnW, leftBtnH1, leftBtns[0], t, true);
-        this._drawMenuButton(ctx, leftColX, colTop + leftBtnH1 + btnGap, leftBtnW, leftBtnH2, leftBtns[1], t, false);
+        this._drawMenuButton(ctx, leftColX, colTop, colBtnW, leftBtnH1, leftBtns[0], t, true);
+        this._drawMenuButton(ctx, leftColX, colTop + leftBtnH1 + btnGap, colBtnW, leftBtnH2, leftBtns[1], t, false);
 
         for (let i = 0; i < rightBtns.length; i++) {
-            this._drawMenuButton(ctx, rightColX, colTop + i * (rightBtnH + btnGap), rightBtnW, rightBtnH, rightBtns[i], t, false);
+            this._drawMenuButton(ctx, rightColX, colTop + i * (rightBtnH + btnGap), colBtnW, rightBtnH, rightBtns[i], t, false);
         }
 
         const bottomY = colTop + maxColH + 24;
-        const bottomGap = 20;
-        const bottomBtnH = 38;
 
-        ctx.font = `500 15px ${FB}`;
+        ctx.font = `500 15px ${FD}`;
         const exitBtnW = ctx.measureText(bottomBtns[0].label).width + 40;
         const bottomStartX = (W - exitBtnW) / 2;
 
-        this._drawMenuButton(ctx, bottomStartX, bottomY, exitBtnW, bottomBtnH, bottomBtns[0], t, false);
+        this._drawMenuButton(ctx, bottomStartX, bottomY, exitBtnW, 38, bottomBtns[0], t, false);
 
 
         // Version text
@@ -3116,7 +3122,7 @@ export class UISystem {
         const discordBtnW = 160;
         const discordBtnH = 36;
         const discordX = 20;
-        const discordY = H - 20 - discordBtnH;
+        const discordY = H - 20 - discordBtnH * 2 - 6;
         const discordHovered = !this._menuPopupActive &&
             this.mouseX >= discordX && this.mouseX <= discordX + discordBtnW &&
             this.mouseY >= discordY && this.mouseY <= discordY + discordBtnH;
@@ -3140,27 +3146,68 @@ export class UISystem {
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        // Discord icon
-        if (this._discordLogo) {
-            const iconW = 36;
-            const iconH = 22;
-            ctx.drawImage(this._discordLogo, discordX + 10, discordY + (discordBtnH - iconH) / 2, iconW, iconH);
-        } else {
-            ctx.fillStyle = discordHovered ? '#fff' : 'rgba(255,255,255,0.7)';
-            ctx.font = `600 14px ${FB}`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('Discord', discordX + discordBtnW / 2, discordY + discordBtnH / 2);
-        }
-
-        // Discord text
+        // Discord icon + text centered
         ctx.fillStyle = discordHovered ? '#fff' : 'rgba(255,255,255,0.7)';
         ctx.font = `600 15px ${FB}`;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('Discord', discordX + (this._discordLogo ? 52 : 14), discordY + discordBtnH / 2);
+        const discordLabel = 'Discord';
+        const discordTextW = ctx.measureText(discordLabel).width;
+        const discordIconW = 36;
+        const discordIconH = 22;
+        const discordGap = 8;
+        const discordIconVisualW = 28;
+        const discordTotalW = (this._discordLogo ? discordIconVisualW + discordGap + discordTextW : discordTextW);
+        const discordContentX = discordX + (discordBtnW - discordTotalW) / 2;
+        const discordIconX = discordContentX - (discordIconVisualW - discordIconW) / 2;
+
+        if (this._discordLogo) {
+            ctx.drawImage(this._discordLogo, discordIconX - 3, discordY + (discordBtnH - discordIconH) / 2, discordIconW, discordIconH);
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(discordLabel, discordContentX + discordIconVisualW + discordGap, discordY + discordBtnH / 2);
+        } else {
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(discordLabel, discordX + discordBtnW / 2, discordY + discordBtnH / 2);
+        }
 
         this._menuRects['discord'] = { x: discordX, y: discordY, w: discordBtnW, h: discordBtnH };
+
+        // Changelog button - below Discord
+        ctx.font = `600 15px ${FB}`;
+        const clBtnW = discordBtnW;
+        const clBtnH = 36;
+        const clX = discordX;
+        const clY = discordY + discordBtnH + 6;
+        const clHovered = !this._menuPopupActive &&
+            this.mouseX >= clX && this.mouseX <= clX + clBtnW &&
+            this.mouseY >= clY && this.mouseY <= clY + clBtnH;
+
+        const clGrad = ctx.createLinearGradient(clX, clY, clX, clY + clBtnH);
+        clGrad.addColorStop(0, clHovered ? '#3a6a7a' : 'rgba(58,106,122,0.35)');
+        clGrad.addColorStop(1, clHovered ? '#2a5060' : 'rgba(42,80,96,0.25)');
+        ctx.fillStyle = clGrad;
+        ctx.beginPath();
+        ctx.roundRect(clX, clY, clBtnW, clBtnH, 10);
+        ctx.fill();
+
+        if (clHovered) {
+            ctx.shadowColor = '#5a8fcf';
+            ctx.shadowBlur = 12;
+        }
+        ctx.strokeStyle = clHovered ? '#5a8fcf' : 'rgba(90,143,207,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(clX, clY, clBtnW, clBtnH, 10);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = clHovered ? '#fff' : 'rgba(255,255,255,0.7)';
+        ctx.font = `600 15px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('\uD83D\uDCDD  Changelog', clX + clBtnW / 2, clY + clBtnH / 2);
+
+        this._menuRects['changelog'] = { x: clX, y: clY, w: clBtnW, h: clBtnH };
 
         if (this._menuPopupActive) {
             if (!this._blurCanvas) {
@@ -4286,7 +4333,7 @@ export class UISystem {
 
         ctx.fillStyle = 'rgba(232,228,220,0.5)';
         ctx.font = `500 16px ${FB}`;
-        ctx.fillText('Move with WASD or Arrow Keys \u2022 Weapons fire automatically', cx, py + 72);
+        ctx.fillText('Move with WASD or Arrow Keys \u2022 Press SPACE to Dash \u2022 Weapons fire automatically', cx, py + 72);
 
         // WASD keyboard diagram
         const keySize = 52;
@@ -4351,6 +4398,57 @@ export class UISystem {
         ctx.textBaseline = 'top';
         ctx.fillText('Arrow Keys', akbX + keySize * 1.5, akbY + keySize * 2 + keyGap + 8);
 
+        // Space key - Dash
+        const spaceKeyW = keySize * 3 + keyGap * 2;
+        const spaceKeyH = keySize * 0.7;
+        const spaceKeyX = cx - spaceKeyW / 2;
+        const spaceKeyY = kbY + keySize * 2 + keyGap + 50;
+
+        ctx.fillStyle = '#8b6e4e';
+        ctx.beginPath();
+        ctx.roundRect(spaceKeyX, spaceKeyY, spaceKeyW, spaceKeyH, 8);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold 18px ${FD}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('SPACE', spaceKeyX + spaceKeyW / 2, spaceKeyY + spaceKeyH / 2);
+
+        ctx.fillStyle = 'rgba(232,228,220,0.35)';
+        ctx.font = `500 14px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('Dash', spaceKeyX + spaceKeyW / 2, spaceKeyY + spaceKeyH + 6);
+
+        // Number keys 1 2 3 - Level Up choices
+        const numKeyW = 42;
+        const numKeyH = 42;
+        const numKeyGap = 10;
+        const numKeysTotalW = numKeyW * 3 + numKeyGap * 2;
+        const numKeyX = cx - numKeysTotalW / 2;
+        const numKeyY = spaceKeyY + spaceKeyH + 30;
+
+        const numKeyLabels = ['1', '2', '3'];
+        const numKeyColors = ['#6a5a3a', '#5a6f8c', '#5a8f7c'];
+        for (let i = 0; i < 3; i++) {
+            const nkx = numKeyX + i * (numKeyW + numKeyGap);
+            ctx.fillStyle = numKeyColors[i];
+            ctx.beginPath();
+            ctx.roundRect(nkx, numKeyY, numKeyW, numKeyH, 8);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = `bold 20px ${FD}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(numKeyLabels[i], nkx + numKeyW / 2, numKeyY + numKeyH / 2);
+        }
+
+        ctx.fillStyle = 'rgba(232,228,220,0.35)';
+        ctx.font = `500 14px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('Choose Level-Up Power', cx, numKeyY + numKeyH + 6);
+
         // Game concepts
         const concepts = [
             { icon: '\u2764\uFE0F', title: 'Health', desc: 'Your HP. Reach zero and the Blight claims you.' },
@@ -4361,7 +4459,7 @@ export class UISystem {
             { icon: '\u23F1\uFE0F', title: 'Survive', desc: 'The Blight grows stronger over time. How long can you last?' },
         ];
 
-        const startY = py + 270;
+        const startY = numKeyY + numKeyH + 36;
         const rowH = 58;
         for (let i = 0; i < concepts.length; i++) {
             const cy = startY + i * rowH;
@@ -5045,6 +5143,11 @@ export class UISystem {
 
     hideChangelog() { this.changelogScreen = null; }
 
+    scrollChangelog(deltaY) {
+        if (!this.changelogScreen) return;
+        this.changelogScreen.scrollY = Math.max(0, Math.min(this.changelogScreen.scrollY + deltaY, this.changelogScreen.maxScroll || 0));
+    }
+
     isChangelogButtonAt(mx, my, buttonId) {
         if (!this._clRects || !this._clRects[buttonId]) return false;
         const r = this._clRects[buttonId];
@@ -5105,32 +5208,45 @@ export class UISystem {
 
         const entries = [
             {
-                version: 'v1.3.0',
+                version: 'v1.3.1',
                 date: 'July 2026',
                 tag: 'Latest',
                 tagColor: '#7c9a6e',
                 sections: [
+                    { title: 'UI Improvements', color: '#c4a23a', items: [
+                        'Main menu button layout fixed (centered, no text clipping)',
+                        'Changelog moved to main menu alongside Discord button',
+                        'Changelog screen now scrollable with mouse wheel',
+                        'Tutorial: added Space bar (Dash) and number keys 1-2-3 (Level-Up choices)',
+                        'Discord button icon and text centered'
+                    ]}
+                ]
+            },
+            {
+                version: 'v1.3.0',
+                date: 'July 2026',
+                tag: 'Stable',
+                tagColor: '#7b5ea7',
+                sections: [
                     { title: 'Performance Optimizations', color: '#b8d94e', items: [
-                        'Film grain: pre-generated noise textures (~3-4ms saved)',
-                        'Chromatic aberration: drawImage trick (~5-10ms saved)',
-                        'Fog of War: half resolution, dirty-check, skip when stationary',
-                        'Damage numbers: hoisted font/align settings outside render loop',
-                        'Projectiles: pre-rendered offscreen sprite cache',
-                        'hexToRgb: Map cache to avoid repeated hex parsing'
+                        'Film grain',
+                        'Chromatic aberration',
+                        'Fog of War',
+                        'Damage numbers',
+                        'Projectiles'
                     ]},
                     { title: 'Bug Fixes', color: '#5a8fcf', items: [
                         'Shop coin animation no longer resets instantly on purchase',
-                        '_weaponDamageLog initialized in constructor',
-                        'Potion spawn block restored (was corrupted causing NaN values)',
+                        'Potion spawn block restored',
                         'Weapon upgrade getStats crash fixed',
                         'NaN health/xp/coins display fixed',
-                        'Game over screen overlay opacity increased',
-                        'Game over layout fixed (no more overlapping elements)'
+                        'latestBoss stored as property for cross-method access',
+                        'Game over screen overlay opacity increased (no more game world bleed-through)',
+                        'Game over layout fixed (weapon log, synergies, achievements, buttons no longer overlap)'
                     ]},
                     { title: 'UI Changes', color: '#c4a23a', items: [
-                        'Weapon unlock banner: top-center slide-in/out animation',
-                        'Discord button added to main menu',
-                        'Combo system removed'
+                        'Weapon unlock banner: top-center slide-in/slide-out animation',
+                        'Discord button added to main menu'
                     ]}
                 ]
             },
@@ -5140,21 +5256,18 @@ export class UISystem {
                 tag: 'Stable',
                 tagColor: '#7b5ea7',
                 sections: [
-                    { title: 'Features', color: '#b8d94e', items: [
-                        'Weapon evolution system (5 unique evolutions)',
-                        'Synergy system (4 weapon synergies)',
-                        'Relic/artifact system (6 relics)',
-                        'Achievement system (15 achievements)',
-                        'Run history tracking (last 20 runs)',
-                        'Auto-updater for desktop version'
-                    ]},
-                    { title: 'Polish', color: '#c4a23a', items: [
-                        'Weapon trails and dash afterimage effects',
-                        'Level-up screen flash and color shift',
-                        'Low HP vignette warning',
-                        'XP gem curved magnet path',
-                        'Boss entrance camera animation',
-                        'Weapon unlock and achievement popups'
+                    { title: 'New Features', color: '#b8d94e', items: [
+                        'Dash/Dodge — Press Space to dash forward with invincibility frames',
+                        'Artifact Relics — 6 rare relics drop from enemies',
+                        'Thorns Reflect — New shop upgrade: enemies take damage when they hit you',
+                        'Fog of War — Toggle in Settings for limited visibility',
+                        'Weather Effects — Per-biome particles: rain, leaves, dust',
+                        'Screen Border Vines — Thorny vines creep from edges at low HP',
+                        'Defeated Screen — Extended to 3.5 seconds',
+                        'Game Over Menu Button — Quick return to main menu',
+                        'Untouchable Fix — Achievement now properly tracks boss fight damage',
+                        'Spawn Rate Scaling — Enemies spawn faster every 5 minutes',
+                        'Auto-Update System — In-game updates'
                     ]}
                 ]
             },
@@ -5178,70 +5291,118 @@ export class UISystem {
 
         const padX = 30;
         const padY = 20;
-        let curY = panelY + padY;
+
+        let totalH = padY;
+        for (const entry of entries) {
+            totalH += 34;
+            for (const section of entry.sections) {
+                totalH += 22;
+                totalH += section.items.length * 20;
+                totalH += 8;
+            }
+            totalH += 16 + 16;
+        }
+
+        if (this.changelogScreen) {
+            this.changelogScreen.maxScroll = Math.max(0, totalH - panelH + padY);
+            this.changelogScreen.scrollY = Math.min(this.changelogScreen.scrollY, this.changelogScreen.maxScroll);
+        }
+        const scrollY = this.changelogScreen ? this.changelogScreen.scrollY : 0;
+
+        let curY = panelY + padY - scrollY;
 
         for (const entry of entries) {
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
+            if (curY + 34 > panelY && curY < panelY + panelH) {
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
 
-            ctx.fillStyle = '#e8e4dc';
-            ctx.font = `bold 22px ${FD}`;
-            ctx.fillText(entry.version, panelX + padX, curY);
+                ctx.fillStyle = '#e8e4dc';
+                ctx.font = `bold 22px ${FD}`;
+                ctx.fillText(entry.version, panelX + padX, curY);
 
-            if (entry.date) {
-                ctx.fillStyle = 'rgba(232,228,220,0.35)';
-                ctx.font = `500 13px ${FB}`;
-                ctx.fillText(entry.date, panelX + padX + ctx.measureText(entry.version).width + 14, curY + 5);
+                if (entry.date) {
+                    ctx.fillStyle = 'rgba(232,228,220,0.35)';
+                    ctx.font = `500 13px ${FB}`;
+                    ctx.fillText(entry.date, panelX + padX + ctx.measureText(entry.version).width + 14, curY + 5);
+                }
+
+                if (entry.tag) {
+                    const tagX = panelX + padX + ctx.measureText(entry.version).width + (entry.date ? ctx.measureText(entry.date).width + 30 : 14);
+                    ctx.fillStyle = entry.tagColor + '33';
+                    const tagW = ctx.measureText(entry.tag).width + 16;
+                    ctx.beginPath();
+                    ctx.roundRect(tagX, curY - 1, tagW, 20, 6);
+                    ctx.fill();
+                    ctx.fillStyle = entry.tagColor;
+                    ctx.font = `600 11px ${FB}`;
+                    ctx.fillText(entry.tag, tagX + 8, curY + 3);
+                }
             }
-
-            if (entry.tag) {
-                const tagX = panelX + padX + ctx.measureText(entry.version).width + (entry.date ? ctx.measureText(entry.date).width + 30 : 14);
-                ctx.fillStyle = entry.tagColor + '33';
-                const tagW = ctx.measureText(entry.tag).width + 16;
-                ctx.beginPath();
-                ctx.roundRect(tagX, curY - 1, tagW, 20, 6);
-                ctx.fill();
-                ctx.fillStyle = entry.tagColor;
-                ctx.font = `600 11px ${FB}`;
-                ctx.fillText(entry.tag, tagX + 8, curY + 3);
-            }
-
             curY += 34;
 
             for (const section of entry.sections) {
-                ctx.fillStyle = section.color;
-                ctx.font = `600 14px ${FB}`;
-                ctx.fillText(section.title, panelX + padX, curY);
+                if (curY + 22 > panelY && curY < panelY + panelH) {
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'top';
+                    ctx.fillStyle = section.color;
+                    ctx.font = `600 14px ${FB}`;
+                    ctx.fillText(section.title, panelX + padX, curY);
+                }
                 curY += 22;
 
                 for (const item of section.items) {
-                    ctx.fillStyle = 'rgba(232,228,220,0.15)';
-                    ctx.font = `500 12px ${FB}`;
-                    ctx.fillText('\u2022', panelX + padX + 4, curY);
-                    ctx.fillStyle = 'rgba(232,228,220,0.6)';
-                    ctx.font = `400 13px ${FB}`;
-                    ctx.fillText(item, panelX + padX + 18, curY);
+                    if (curY + 20 > panelY && curY < panelY + panelH) {
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'top';
+                        ctx.fillStyle = 'rgba(232,228,220,0.15)';
+                        ctx.font = `500 12px ${FB}`;
+                        ctx.fillText('\u2022', panelX + padX + 4, curY);
+                        ctx.fillStyle = 'rgba(232,228,220,0.6)';
+                        ctx.font = `400 13px ${FB}`;
+                        ctx.fillText(item, panelX + padX + 18, curY);
+                    }
                     curY += 20;
                 }
                 curY += 8;
             }
 
-            curY += 16;
-
-            const divGrad = ctx.createLinearGradient(panelX + padX, 0, panelX + panelW - padX, 0);
-            divGrad.addColorStop(0, 'rgba(255,255,255,0)');
-            divGrad.addColorStop(0.5, 'rgba(255,255,255,0.08)');
-            divGrad.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.strokeStyle = divGrad;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(panelX + padX, curY);
-            ctx.lineTo(panelX + panelW - padX, curY);
-            ctx.stroke();
-            curY += 16;
+            if (curY + 16 > panelY && curY < panelY + panelH) {
+                const divGrad = ctx.createLinearGradient(panelX + padX, 0, panelX + panelW - padX, 0);
+                divGrad.addColorStop(0, 'rgba(255,255,255,0)');
+                divGrad.addColorStop(0.5, 'rgba(255,255,255,0.08)');
+                divGrad.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.strokeStyle = divGrad;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(panelX + padX, curY);
+                ctx.lineTo(panelX + panelW - padX, curY);
+                ctx.stroke();
+            }
+            curY += 16 + 16;
         }
 
         ctx.restore();
+
+        // Scrollbar
+        if (this.changelogScreen && this.changelogScreen.maxScroll > 0) {
+            const sbW = 6;
+            const sbX = panelX + panelW - sbW - 8;
+            const sbTrackH = panelH - 20;
+            const sbY = panelY + 10;
+            const contentH = totalH;
+            const sbThumbH = Math.max(30, sbTrackH * (panelH / contentH));
+            const sbThumbY = sbY + (sbTrackH - sbThumbH) * (scrollY / this.changelogScreen.maxScroll);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.06)';
+            ctx.beginPath();
+            ctx.roundRect(sbX, sbY, sbW, sbTrackH, 3);
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.beginPath();
+            ctx.roundRect(sbX, sbThumbY, sbW, sbThumbH, 3);
+            ctx.fill();
+        }
 
         const backBtnW = 160;
         const backBtnH = 44;

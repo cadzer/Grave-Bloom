@@ -898,6 +898,12 @@ class Game {
 
         this.canvas.addEventListener('mousedown', () => { this.ui._mouseDown = true; });
         this.canvas.addEventListener('mouseup', () => { this.ui._mouseDown = false; });
+        this.canvas.addEventListener('wheel', (e) => {
+            if (this.gameState === 'changelog') {
+                e.preventDefault();
+                this.ui.scrollChangelog(e.deltaY * 0.5);
+            }
+        }, { passive: false });
 
         window.addEventListener('keydown', (e) => {
             if (this._fullscreenQueued) {
