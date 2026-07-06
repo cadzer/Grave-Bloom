@@ -1440,6 +1440,13 @@ class Game {
 
         if (this.gameState === 'menu') {
             this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker, this._showUpdatePopup);
+            if (this.debug) {
+                ctx.fillStyle = 'rgba(76,175,80,0.6)';
+                ctx.font = '600 14px Rajdhani';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText('DEBUG MODE', GAME.WIDTH / 2, GAME.HEIGHT - 50);
+            }
             if (this._showUpdatePopup) {
                 this.ui.drawUpdatePopup(ctx, this.updateChecker.latestVersion, this.updateChecker.updateUrl, this.autoUpdater);
             }
