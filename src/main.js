@@ -530,6 +530,11 @@ class Game {
                     this.ui.showAchievements(this.achievementSystem);
                     return;
                 }
+                if (this.ui.isMenuButtonAt(mx, my, 'changelog')) {
+                    this.gameState = 'changelog';
+                    this.ui.showChangelog();
+                    return;
+                }
                 if (this.ui.isMenuButtonAt(mx, my, 'exit')) {
                     this.gameState = 'exitconfirm';
                     return;
@@ -704,6 +709,15 @@ class Game {
 
             if (this.gameState === 'achievements') {
                 if (this.ui.isAchievementsButtonAt(mx, my, 'back')) {
+                    this.gameState = 'menu';
+                    this.ui.showMenu();
+                    return;
+                }
+                return;
+            }
+
+            if (this.gameState === 'changelog') {
+                if (this.ui.isChangelogButtonAt(mx, my, 'back')) {
                     this.gameState = 'menu';
                     this.ui.showMenu();
                     return;
@@ -1429,6 +1443,11 @@ class Game {
 
         if (this.gameState === 'achievements') {
             this.ui.drawAchievements(ctx);
+            return;
+        }
+
+        if (this.gameState === 'changelog') {
+            this.ui.drawChangelog(ctx);
             return;
         }
 

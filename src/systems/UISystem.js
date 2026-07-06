@@ -3037,6 +3037,7 @@ export class UISystem {
         ];
         const rightBtns = [
             { id: 'achievements', label: '\uD83C\uDFC6  Achievements', color1: '#6a5a3a', color2: '#4a3a22', glow: '#c4a23a' },
+            { id: 'changelog', label: '\uD83D\uDCDD  Changelog', color1: '#3a5a6a', color2: '#2a3d52', glow: '#5a8fcf' },
             { id: 'tutorial', label: '\uD83D\uDCD6  Tutorial', color1: '#5a6f8c', color2: '#3d5270', glow: '#5a8fcf' },
             { id: 'settings', label: '\u2699\uFE0F  Settings', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' },
         ];
@@ -3048,7 +3049,7 @@ export class UISystem {
         // Measure text widths for column widths
         ctx.font = `500 16px ${FB}`;
         const leftBtnW = ctx.measureText('\uD83C\uDF3F  Bloomkeeper\'s Sanctum').width + 50;
-        const rightBtnW = ctx.measureText('\uD83C\uDFC6  Achievements').width + 50;
+        const rightBtnW = ctx.measureText('\uD83D\uDCDD  Changelog').width + 50;
         const rightBtnH = 52;
         const rightColH = rightBtns.length * rightBtnH + (rightBtns.length - 1) * 14;
         const btnGap = 14;
@@ -5016,6 +5017,221 @@ export class UISystem {
         const backBtn = { id: 'back', label: '\u2190  Back', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' };
         this._drawMenuButton(ctx, backBtnX, backBtnY, backBtnW, backBtnH, backBtn, t, false);
         this._achievRects['back'] = { x: backBtnX, y: backBtnY, w: backBtnW, h: backBtnH };
+    }
+
+    // --- Changelog ---
+
+    showChangelog() {
+        this.changelogScreen = { scrollY: 0 };
+    }
+
+    hideChangelog() { this.changelogScreen = null; }
+
+    isChangelogButtonAt(mx, my, buttonId) {
+        if (!this._clRects || !this._clRects[buttonId]) return false;
+        const r = this._clRects[buttonId];
+        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+    }
+
+    drawChangelog(ctx) {
+        this.hudTimer += 0.016;
+        this.updateParticles(0.016);
+        const t = this.hudTimer;
+        const W = GAME.WIDTH;
+        const H = GAME.HEIGHT;
+        this._clRects = {};
+
+        this.menuBg.render();
+        ctx.drawImage(this.menuBg.canvas, 0, 0);
+
+        if (!this._blurCanvas) {
+            this._blurCanvas = document.createElement('canvas');
+            this._blurCanvas.width = W;
+            this._blurCanvas.height = H;
+        }
+        this._blurCanvas.getContext('2d').drawImage(ctx.canvas, 0, 0);
+        ctx.save();
+        ctx.filter = 'blur(6px)';
+        ctx.drawImage(this._blurCanvas, 0, 0);
+        ctx.restore();
+
+        ctx.fillStyle = 'rgba(10,14,8,0.82)';
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.fillStyle = '#e8e4dc';
+        ctx.font = `bold 32px ${FD}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('Changelog', W / 2, 40);
+
+        const panelX = 80;
+        const panelY = 110;
+        const panelW = W - 160;
+        const panelH = H - 170;
+
+        ctx.fillStyle = 'rgba(18,18,24,0.8)';
+        ctx.beginPath();
+        ctx.roundRect(panelX, panelY, panelW, panelH, 16);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(panelX, panelY, panelW, panelH, 16);
+        ctx.stroke();
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(panelX, panelY, panelW, panelH, 16);
+        ctx.clip();
+
+        const entries = [
+            {
+                version: 'v1.3.0',
+                date: 'July 2026',
+                tag: 'Latest',
+                tagColor: '#7c9a6e',
+                sections: [
+                    { title: 'Performance Optimizations', color: '#b8d94e', items: [
+                        'Film grain: pre-generated noise textures (~3-4ms saved)',
+                        'Chromatic aberration: drawImage trick (~5-10ms saved)',
+                        'Fog of War: half resolution, dirty-check, skip when stationary',
+                        'Damage numbers: hoisted font/align settings outside render loop',
+                        'Projectiles: pre-rendered offscreen sprite cache',
+                        'hexToRgb: Map cache to avoid repeated hex parsing'
+                    ]},
+                    { title: 'Bug Fixes', color: '#5a8fcf', items: [
+                        'Shop coin animation no longer resets instantly on purchase',
+                        '_weaponDamageLog initialized in constructor',
+                        'Potion spawn block restored (was corrupted causing NaN values)',
+                        'Weapon upgrade getStats crash fixed',
+                        'NaN health/xp/coins display fixed',
+                        'Game over screen overlay opacity increased',
+                        'Game over layout fixed (no more overlapping elements)'
+                    ]},
+                    { title: 'UI Changes', color: '#c4a23a', items: [
+                        'Weapon unlock banner: top-center slide-in/out animation',
+                        'Discord button added to main menu',
+                        'Combo system removed'
+                    ]}
+                ]
+            },
+            {
+                version: 'v1.2.3',
+                date: 'June 2026',
+                tag: 'Stable',
+                tagColor: '#7b5ea7',
+                sections: [
+                    { title: 'Features', color: '#b8d94e', items: [
+                        'Weapon evolution system (5 unique evolutions)',
+                        'Synergy system (4 weapon synergies)',
+                        'Relic/artifact system (6 relics)',
+                        'Achievement system (15 achievements)',
+                        'Run history tracking (last 20 runs)',
+                        'Auto-updater for desktop version'
+                    ]},
+                    { title: 'Polish', color: '#c4a23a', items: [
+                        'Weapon trails and dash afterimage effects',
+                        'Level-up screen flash and color shift',
+                        'Low HP vignette warning',
+                        'XP gem curved magnet path',
+                        'Boss entrance camera animation',
+                        'Weapon unlock and achievement popups'
+                    ]}
+                ]
+            },
+            {
+                version: 'Coming Soon',
+                date: '',
+                tag: 'WIP',
+                tagColor: '#f39c12',
+                sections: [
+                    { title: 'Planned', color: '#5a8fcf', items: [
+                        'New biome with unique enemies and hazards',
+                        'Additional weapon evolutions',
+                        'Daily challenge mode',
+                        'Statistics dashboard',
+                        'Accessibility options (colorblind mode, etc.)',
+                        'Performance: enemy gradient caching'
+                    ]}
+                ]
+            }
+        ];
+
+        const padX = 30;
+        const padY = 20;
+        let curY = panelY + padY;
+
+        for (const entry of entries) {
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+
+            ctx.fillStyle = '#e8e4dc';
+            ctx.font = `bold 22px ${FD}`;
+            ctx.fillText(entry.version, panelX + padX, curY);
+
+            if (entry.date) {
+                ctx.fillStyle = 'rgba(232,228,220,0.35)';
+                ctx.font = `500 13px ${FB}`;
+                ctx.fillText(entry.date, panelX + padX + ctx.measureText(entry.version).width + 14, curY + 5);
+            }
+
+            if (entry.tag) {
+                const tagX = panelX + padX + ctx.measureText(entry.version).width + (entry.date ? ctx.measureText(entry.date).width + 30 : 14);
+                ctx.fillStyle = entry.tagColor + '33';
+                const tagW = ctx.measureText(entry.tag).width + 16;
+                ctx.beginPath();
+                ctx.roundRect(tagX, curY - 1, tagW, 20, 6);
+                ctx.fill();
+                ctx.fillStyle = entry.tagColor;
+                ctx.font = `600 11px ${FB}`;
+                ctx.fillText(entry.tag, tagX + 8, curY + 3);
+            }
+
+            curY += 34;
+
+            for (const section of entry.sections) {
+                ctx.fillStyle = section.color;
+                ctx.font = `600 14px ${FB}`;
+                ctx.fillText(section.title, panelX + padX, curY);
+                curY += 22;
+
+                for (const item of section.items) {
+                    ctx.fillStyle = 'rgba(232,228,220,0.15)';
+                    ctx.font = `500 12px ${FB}`;
+                    ctx.fillText('\u2022', panelX + padX + 4, curY);
+                    ctx.fillStyle = 'rgba(232,228,220,0.6)';
+                    ctx.font = `400 13px ${FB}`;
+                    ctx.fillText(item, panelX + padX + 18, curY);
+                    curY += 20;
+                }
+                curY += 8;
+            }
+
+            curY += 16;
+
+            const divGrad = ctx.createLinearGradient(panelX + padX, 0, panelX + panelW - padX, 0);
+            divGrad.addColorStop(0, 'rgba(255,255,255,0)');
+            divGrad.addColorStop(0.5, 'rgba(255,255,255,0.08)');
+            divGrad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.strokeStyle = divGrad;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(panelX + padX, curY);
+            ctx.lineTo(panelX + panelW - padX, curY);
+            ctx.stroke();
+            curY += 16;
+        }
+
+        ctx.restore();
+
+        const backBtnW = 160;
+        const backBtnH = 44;
+        const backBtnX = (W - backBtnW) / 2;
+        const backBtnY = panelY + panelH + 12;
+        const backBtn = { id: 'back', label: '\u2190  Back', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' };
+        this._drawMenuButton(ctx, backBtnX, backBtnY, backBtnW, backBtnH, backBtn, t, false);
+        this._clRects['back'] = { x: backBtnX, y: backBtnY, w: backBtnW, h: backBtnH };
     }
 
     // --- Exit Confirmation ---
