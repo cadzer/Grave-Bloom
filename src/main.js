@@ -243,6 +243,14 @@ class Game {
             this.synergySystem.getActive(),
             CHARACTERS[this.selectedChar]?.name || 'Bloomkeeper');
 
+        if (this.debug) {
+            ctx.fillStyle = 'rgba(76,175,80,0.6)';
+            ctx.font = `600 14px Rajdhani`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('DEBUG MODE', GAME.WIDTH / 2, GAME.HEIGHT - 50);
+        }
+
 
         if (this.player.hp > 0 && this.player.hp / this.player.maxHp < 0.25) {
             this.ui.drawLowHealthWarning(ctx, this.lowHealthPulse);
