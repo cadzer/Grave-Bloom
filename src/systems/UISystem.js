@@ -124,6 +124,9 @@ export class UISystem {
         this._shopTarget = 0;
         this._shopCoinAnimDir = 0;
         this._shopCoinAnimTimer = 0;
+        this._debugClickCount = 0;
+        this._debugClickTimer = 0;
+        this._versionTextRect = null;
         this.particles = [];
         for (let i = 0; i < 40; i++) {
             this.particles.push({
@@ -3042,7 +3045,6 @@ export class UISystem {
             { id: 'settings', label: '\u2699\uFE0F  Settings', color1: '#4a4a50', color2: '#3a3a40', glow: '#7b5ea7' },
         ];
         const bottomBtns = [
-            { id: 'debug', label: debug ? '\u2705  Debug: ON' : '\u26AA  Debug: OFF', color1: debug ? '#3a5a3a' : '#2a2a30', color2: debug ? '#2a4a2a' : '#1a1a22', glow: debug ? '#4caf50' : '#666' },
             { id: 'exit', label: '\uD83D\uDEAA  Exit', color1: '#3a2a30', color2: '#2a1a22', glow: '#8b3a62' },
         ];
 
@@ -3080,13 +3082,10 @@ export class UISystem {
         const bottomBtnH = 38;
 
         ctx.font = `500 15px ${FB}`;
-        const debugBtnW = ctx.measureText(bottomBtns[0].label).width + 40;
-        const exitBtnW = ctx.measureText(bottomBtns[1].label).width + 40;
-        const bottomTotalW = debugBtnW + bottomGap + exitBtnW;
-        const bottomStartX = (W - bottomTotalW) / 2;
+        const exitBtnW = ctx.measureText(bottomBtns[0].label).width + 40;
+        const bottomStartX = (W - exitBtnW) / 2;
 
-        this._drawMenuButton(ctx, bottomStartX, bottomY, debugBtnW, bottomBtnH, bottomBtns[0], t, false);
-        this._drawMenuButton(ctx, bottomStartX + debugBtnW + bottomGap, bottomY, exitBtnW, bottomBtnH, bottomBtns[1], t, false);
+        this._drawMenuButton(ctx, bottomStartX, bottomY, exitBtnW, bottomBtnH, bottomBtns[0], t, false);
 
 
         // Version text
@@ -3109,6 +3108,9 @@ export class UISystem {
             ctx.fillStyle = 'rgba(232,228,220,0.2)';
             ctx.fillText(`v${version}`, W - 20, H - 12);
         }
+
+        const vtW = ctx.measureText(`v${version}`).width + 20;
+        this._versionTextRect = { x: W - 20 - vtW, y: H - 28, w: vtW, h: 24 };
 
         // Discord button - bottom left
         const discordBtnW = 160;
@@ -3544,6 +3546,22 @@ export class UISystem {
         if (!this._menuRects || !this._menuRects[buttonId]) return false;
         const r = this._menuRects[buttonId];
         return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+    }
+
+    isVersionTextAt(mx, my) {
+        if (!this._versionTextRect) return false;
+        const r = this._versionTextRect;
+        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+    }
+
+    onVersionTextClick() {
+        const now = Date.now();
+        if (now - this._debugClickTimer > 2000) {
+            this._debugClickCount = 0;
+        }
+        this._debugClickTimer = now;
+        this._debugClickCount++;
+        return this._debugClickCount >= 5;
     }
 
     // --- Character Selection ---

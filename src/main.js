@@ -539,17 +539,15 @@ class Game {
                     this.gameState = 'exitconfirm';
                     return;
                 }
-                if (this.ui.isMenuButtonAt(mx, my, 'debug')) {
-                    if (this.debug) {
-                        this.debug = false;
-                    } else {
-                        this.gameState = 'debugpassword';
-                        this._debugPasswordInput = '';
-                    }
-                    return;
-                }
                 if (this.ui.isMenuButtonAt(mx, my, 'discord')) {
                     window.open('https://discord.gg/9rqvtVQKkB', '_blank');
+                    return;
+                }
+                if (this.ui.isVersionTextAt(mx, my)) {
+                    if (this.ui.onVersionTextClick()) {
+                        this.debug = !this.debug;
+                        this.ui.showMenu();
+                    }
                     return;
                 }
                 return;
