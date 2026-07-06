@@ -545,8 +545,13 @@ class Game {
                 }
                 if (this.ui.isVersionTextAt(mx, my)) {
                     if (this.ui.onVersionTextClick()) {
-                        this.debug = !this.debug;
-                        this.ui.showMenu();
+                        if (this.debug) {
+                            this.debug = false;
+                            this.ui.showMenu();
+                        } else {
+                            this.gameState = 'debugpassword';
+                            this._debugPasswordInput = '';
+                        }
                     }
                     return;
                 }
