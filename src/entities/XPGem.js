@@ -18,6 +18,8 @@ export class XPGem {
         this.dead = false;
         this.bobOffset = Math.random() * Math.PI * 2;
         this.spinOffset = Math.random() * Math.PI * 2;
+        this.angleOffset = Math.random() * Math.PI * 2;
+        this.magnetSpeed = 0;
     }
 
     update(dt, playerX, playerY, magnetRadius) {
@@ -26,9 +28,18 @@ export class XPGem {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < magnetRadius && dist > 0) {
-            const speed = XP_GEMS.MAGNET_SPEED * (1 - dist / magnetRadius);
-            this.x += (dx / dist) * speed * dt;
-            this.y += (dy / dist) * speed * dt;
+            const baseSpeed = XP_GEMS.MAGNET_SPEED * (1 - dist / magnetRadius);
+            this.magnetSpeed = Math.max(this.magnetSpeed, baseSpeed);
+
+            const straightAngle = Math.atan2(dy, dx);
+            const curve = Math.sin(this.angleOffset + dist * 0.02) * 0.4;
+            const angle = straightAngle + curve;
+
+            this.x += Math.cos(angle) * this.magnetSpeed * dt;
+            this.y += Math.sin(angle) * this.magnetSpeed * dt;
+            this.angleOffset += dt * 3;
+        } else {
+            this.magnetSpeed *= 0.9;
         }
 
         this.bobOffset += dt * XP_GEMS.BOB_SPEED;

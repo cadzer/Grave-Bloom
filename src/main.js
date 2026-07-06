@@ -37,6 +37,7 @@ class Game {
         this.ctx = this.renderer.getContext();
         this.input = new Input();
         this.ui = new UISystem();
+        this.ui.setSound(this.sound);
         this.shopSystem = new ShopSystem();
         this.particles = new ParticleSystem();
         this.sound = new SoundSystem();
@@ -68,6 +69,7 @@ class Game {
         this.selectedChar = 'bloomkeeper';
         this.selectedLoadout = 'default';
         this.debug = false;
+        this._weaponDamageLog = {};
         this.ui.showMenu();
 
         this.setupEvents();
@@ -220,10 +222,9 @@ class Game {
 
         ctx.restore();
 
-        this.renderer.drawPostProcess(ctx, this.elapsedTime);
+        this.renderer.drawPostProcess(ctx, this.elapsedTime, this.player.hp / this.player.maxHp);
 
-        this.fogOfWar.drawFog(ctx, cx, cy, this.player.x, this.player.y,
-            this.spawner.getEnemies(), this.spawner.getBosses());
+        this.fogOfWar.drawFog(ctx, cx, cy);
 
         this.screenBorders.draw(ctx);
 
@@ -235,18 +236,22 @@ class Game {
         const stage = this.spawner.getStage(this.elapsedTime);
         const ownedPassives = this.passiveSystem.getOwned();
         this.ui.drawHUD(ctx, this.kills, this.elapsedTime,
-            this.player.hp, this.player.maxHp,
-            this.xp, this.xpToNext, this.level,
+            this.displayHp, this.player.maxHp,
+            this.displayXp, this.xpToNext, this.level,
             ownedPassives, stage.name,
-            this.runCoins, this.weaponManager,
+            this.displayCoins, this.weaponManager,
             this.synergySystem.getActive(),
             CHARACTERS[this.selectedChar]?.name || 'Bloomkeeper');
+
 
         if (this.player.hp > 0 && this.player.hp / this.player.maxHp < 0.25) {
             this.ui.drawLowHealthWarning(ctx, this.lowHealthPulse);
         }
 
         this.ui.drawAnnouncement(ctx);
+        this.ui.drawWeaponUnlockBanner(ctx);
+        this.ui.drawAchievementPopup(ctx);
+        this.ui.drawTooltip(ctx);
 
         if (this.evolutionAnim) {
             this.ui.drawEvolutionAnim(ctx, this.evolutionAnim);
@@ -299,7 +304,13 @@ class Game {
         this.bossIntroCamX = 0;
         this.bossIntroCamY = 0;
         this.bossIntroName = '';
+        this._latestBoss = null;
         this.potionSpawnTimer = 0;
+
+        this.displayHp = this.player.maxHp;
+        this.displayXp = 0;
+        this.displayCoins = 0;
+        this._weaponDamageLog = {};
 
         this.weaponManager.addWeapon('arcane_bolt', 1);
         const loadout = LOADOUTS.find(l => l.id === this.selectedLoadout);
@@ -376,12 +387,18 @@ class Game {
             onEnemyHit: (enemy, damage, x, y) => {
                 this.damageNumbers.add(x, y - 40, damage);
                 this.sound.playEnemyHit();
+                const lastWeapon = this.weaponManager.getLastHitWeapon();
+                if (lastWeapon) {
+                    if (!this._weaponDamageLog[lastWeapon]) this._weaponDamageLog[lastWeapon] = 0;
+                    this._weaponDamageLog[lastWeapon] += damage;
+                }
                 if (this.relicSystem.hasRelic('lifesteal')) {
                     this.player.hp = Math.min(this.player.hp + damage * 0.15, this.player.maxHp);
                 }
             },
             onEnemyKilled: (enemy) => {
                 this.kills++;
+
                 if ([100, 250, 500, 1000, 2500, 5000].includes(this.kills)) {
                     this.ui.showAnnouncement(`${this.kills} Kills!`, 'The Blight trembles!');
                     this.sound.playLevelUp();
@@ -526,6 +543,10 @@ class Game {
                     }
                     return;
                 }
+                if (this.ui.isMenuButtonAt(mx, my, 'discord')) {
+                    window.open('https://discord.gg/9rqvtVQKkB', '_blank');
+                    return;
+                }
                 return;
             }
 
@@ -650,7 +671,6 @@ class Game {
                 const upgradeKey = this.ui.getShopUpgradeAt(mx, my);
                 if (upgradeKey) {
                     this.shopSystem.buyUpgrade(upgradeKey);
-                    this.ui.showShop(this.shopSystem);
                     return;
                 }
                 if (this.ui.isShopButtonAt(mx, my, 'back')) {
@@ -851,6 +871,9 @@ class Game {
             }
         });
 
+        this.canvas.addEventListener('mousedown', () => { this.ui._mouseDown = true; });
+        this.canvas.addEventListener('mouseup', () => { this.ui._mouseDown = false; });
+
         window.addEventListener('keydown', (e) => {
             if (this._fullscreenQueued) {
                 this._fullscreenQueued = false;
@@ -966,6 +989,7 @@ class Game {
         if (choice.kind === 'weapon_unlock') {
             this.upgradeSystem.applyWeaponUnlock(choice.weaponTypeId, this.weaponManager);
             this.sound.playWeaponUnlock();
+            this.ui.showWeaponUnlock(choice.name, choice.icon || '\u2694\uFE0F');
         } else if (choice.kind === 'weapon_levelup') {
             this.upgradeSystem.applyWeaponLevelUp(choice.weaponTypeId, this.weaponManager);
         } else if (choice.kind === 'weapon') {
@@ -1020,6 +1044,7 @@ class Game {
 
     triggerLevelUp() {
         this.gameState = 'levelup';
+        this.renderer.flashLevelUp();
         this.ui.setPassiveLevels(this.passiveSystem.levels);
         const count = this.debug ? 999 : LEVELING.LEVEL_UP_CHOICES;
         const choices = this.upgradeSystem.getChoices(count, this.weaponManager, this.debug);
@@ -1134,6 +1159,16 @@ class Game {
 
         this.elapsedTime += dt;
 
+
+
+        const hpDrainSpeed = 3;
+        this.displayHp += (this.player.hp - this.displayHp) * hpDrainSpeed * dt;
+        if (Math.abs(this.displayHp - this.player.hp) < 0.5) this.displayHp = this.player.hp;
+
+        this.displayXp += (this.xp - this.displayXp) * 5 * dt;
+        this.displayCoins += (this.runCoins - this.displayCoins) * 5 * dt;
+        if (Math.abs(this.displayCoins - this.runCoins) < 1) this.displayCoins = this.runCoins;
+
         if (this.relicSystem.hasRelic('doubleDamageDoubleTaken')) {
             this.player.damageMulti = 2;
         }
@@ -1164,6 +1199,15 @@ class Game {
             this.lowHealthPulse = 0;
         }
 
+        if (this.ui._weaponUnlock) {
+            this.ui._weaponUnlock.timer -= dt;
+            if (this.ui._weaponUnlock.timer <= 0) this.ui._weaponUnlock = null;
+        }
+        if (this.ui._achievementPopup) {
+            this.ui._achievementPopup.timer -= dt;
+            if (this.ui._achievementPopup.timer <= 0) this.ui._achievementPopup = null;
+        }
+
         const stage = this.spawner.getStage(this.elapsedTime);
 
         const announcement = this.spawner.checkAnnouncement(this.elapsedTime);
@@ -1181,7 +1225,10 @@ class Game {
             const dy = this.player.y - gem.y;
             if (dx * dx + dy * dy < pickupR2) {
                 gem.dead = true;
-                this.particles.xpCollect(gem.x - this.player.x + GAME.WIDTH / 2, gem.y - this.player.y + GAME.HEIGHT / 2);
+                const gx = gem.x - this.player.x + GAME.WIDTH / 2;
+                const gy = gem.y - this.player.y + GAME.HEIGHT / 2;
+                this.particles.xpCollect(gx, gy);
+                this.particles.ring(gx, gy, gem.radius * 1.5, 8, gem.color || '#7c9a6e', 0.3, 2);
                 this.sound.playXpPickup();
                 this.addXP(gem.value);
             }
@@ -1207,7 +1254,7 @@ class Game {
         }
 
         this.potionSpawnTimer += dt;
-        if (this.potionSpawnTimer >= 20 && this.potions.length < 3 && this.player.hp < this.player.maxHp) {
+        if (this.potionSpawnTimer >= 30 && this.potions.length < 2 && this.player.hp < this.player.maxHp) {
             this.potionSpawnTimer = 0;
             const angle = Math.random() * Math.PI * 2;
             const dist = 200 + Math.random() * 400;
@@ -1240,6 +1287,7 @@ class Game {
             this._bossDamageTaken = false;
             const latestBoss = this.spawner.getLatestBoss();
             if (latestBoss) {
+                this._latestBoss = latestBoss;
                 this.bossIntroTimer = 2.5;
                 this.bossIntroDuration = 2.5;
                 this.bossIntroTargetX = latestBoss.x;
@@ -1355,7 +1403,8 @@ class Game {
                 this.pendingGameOver = {
                     ...runStats,
                     newAchievements,
-                    activeSynergies: this.synergySystem.getActive()
+                    activeSynergies: this.synergySystem.getActive(),
+                    weaponDamageLog: { ...this._weaponDamageLog }
                 };
             }
         }
@@ -1453,6 +1502,28 @@ class Game {
                 bannerAlpha = Math.max(0, 1 - (elapsed - halfDur) / 0.3);
             }
             if (bannerAlpha > 0) {
+                const darkAlpha = Math.min(0.7, elapsed * 2) * bannerAlpha;
+                ctx.fillStyle = `rgba(0,0,0,${darkAlpha})`;
+                ctx.fillRect(0, 0, GAME.WIDTH, GAME.HEIGHT);
+
+                if (this._latestBoss && elapsed < 0.8) {
+                    const bxs = GAME.WIDTH / 2;
+                    const bys = GAME.HEIGHT / 2;
+                    const silhouetteAlpha = Math.min(1, elapsed / 0.4);
+                    ctx.save();
+                    ctx.globalAlpha = silhouetteAlpha * 0.6 * bannerAlpha;
+                    ctx.fillStyle = '#1a0a1a';
+                    ctx.beginPath();
+                    ctx.arc(bxs, bys, 80 + elapsed * 20, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = silhouetteAlpha * 0.3 * bannerAlpha;
+                    ctx.fillStyle = '#2a1a2a';
+                    ctx.beginPath();
+                    ctx.arc(bxs, bys, 120 + elapsed * 30, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
                 ctx.fillStyle = `rgba(0,0,0,${0.4 * bannerAlpha})`;
                 ctx.fillRect(0, GAME.HEIGHT / 2 - 60, GAME.WIDTH, 120);
                 ctx.save();

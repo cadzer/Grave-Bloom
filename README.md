@@ -7,7 +7,7 @@
 <img src="https://i.imgur.com/QKHMWm9.png" width="600">
 
 [![Download](https://img.shields.io/badge/Download-GraveBloom--Setup.exe-brightgreen?style=for-the-badge&logo=windows)](https://github.com/cadzer/Grave-Bloom/releases/latest)
-![Version](https://img.shields.io/badge/version-1.2.3-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.3.0-blue?style=for-the-badge)
 
 </div>
 

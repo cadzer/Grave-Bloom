@@ -51,11 +51,18 @@ export class DamageNumbers {
     draw(ctx, playerX, playerY) {
         const cx = ctx.canvas.width / 2;
         const cy = ctx.canvas.height / 2;
+        const fontStr = `bold ${DAMAGE_NUMBERS.FONT_SIZE}px Rajdhani`;
+        const W = ctx.canvas.width;
+        const H = ctx.canvas.height;
+
+        ctx.font = fontStr;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
 
         for (const n of this.numbers) {
             const sx = cx + (n.x - playerX);
             const sy = cy + (n.y - playerY);
-            if (sx < -50 || sx > ctx.canvas.width + 50 || sy < -50 || sy > ctx.canvas.height + 50) continue;
+            if (sx < -50 || sx > W + 50 || sy < -50 || sy > H + 50) continue;
 
             const alpha = Math.min(1, n.timer / 0.2);
             const scale = n.scale * (1 + (1 - n.timer / DAMAGE_NUMBERS.LIFETIME) * 0.3);
@@ -67,17 +74,12 @@ export class DamageNumbers {
 
             const text = Math.ceil(n.value);
 
-            // Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.font = `bold ${DAMAGE_NUMBERS.FONT_SIZE}px Rajdhani`;
-            ctx.textAlign = 'center';
             ctx.fillText(text, 2, 2);
 
-            // Main text
             ctx.fillStyle = n.color;
             ctx.fillText(text, 0, 0);
 
-            // Bright outline for crits
             if (n.value >= DAMAGE_NUMBERS.CRIT_THRESHOLD) {
                 ctx.strokeStyle = '#fff';
                 ctx.lineWidth = 1;

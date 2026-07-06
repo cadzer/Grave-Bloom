@@ -37,6 +37,11 @@ export class UpgradeSystem {
                 if (debug || weapon.level < 8) {
                     const cfg = weapon.config;
                     const isMaxed = weapon.level >= 8;
+                    const currentDmg = weapon.getStats(1, 1, 1).damage;
+                    const savedLevel = weapon.level;
+                    weapon.level = weapon.level + 1;
+                    const nextDmg = weapon.getStats(1, 1, 1).damage;
+                    weapon.level = savedLevel;
                     pool.push({
                         id: weapon.typeId,
                         kind: 'weapon_levelup',
@@ -45,6 +50,8 @@ export class UpgradeSystem {
                         icon: weapon.isEvolved ? '\u2B50' : this.getWeaponIcon(weapon.typeId),
                         color: cfg.color,
                         currentLevel: weapon.level,
+                        currentDamage: currentDmg,
+                        nextDamage: nextDmg,
                         maxLevel: 8,
                         weaponTypeId: weapon.typeId,
                         apply: null

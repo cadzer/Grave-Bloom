@@ -121,16 +121,26 @@ export class Player {
         }
 
         // Draw dash trails
-        for (const trail of this.dashTrails) {
+        for (let i = 0; i < this.dashTrails.length; i++) {
+            const trail = this.dashTrails[i];
             const tx = cx + (trail.x - this.x);
             const ty = cy + (trail.y - this.y);
             ctx.save();
-            ctx.globalAlpha = trail.alpha * 0.4;
+            ctx.globalAlpha = trail.alpha * 0.6;
             ctx.translate(tx, ty);
-            ctx.fillStyle = 'rgba(184,217,78,0.5)';
+            const scale = 0.8 + trail.alpha * 0.2;
+            ctx.scale(scale, scale);
+
+            ctx.fillStyle = `rgba(184,217,78,${0.3 + trail.alpha * 0.3})`;
             ctx.beginPath();
-            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            ctx.arc(0, 0, this.radius + 2, 0, Math.PI * 2);
             ctx.fill();
+
+            ctx.fillStyle = `rgba(200,232,120,${trail.alpha * 0.4})`;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+
             ctx.restore();
         }
 

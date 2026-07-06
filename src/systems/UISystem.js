@@ -10,11 +10,17 @@ function getPassiveLevel(id) { return _passiveLevels[id] || 0; }
 const FD = 'Rajdhani';
 const FB = 'Inter';
 
+const _hexRgbCache = new Map();
 function hexToRgb(hex) {
+    let c = _hexRgbCache.get(hex);
+    if (c) return c;
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
-    return { r, g, b };
+    c = { r, g, b };
+    _hexRgbCache.set(hex, c);
+    if (_hexRgbCache.size > 256) _hexRgbCache.clear();
+    return c;
 }
 
 function lerpColor(hex, amt) {
@@ -28,6 +34,7 @@ function darkColor(hex, amt) {
 }
 
 function drawParticles(ctx, t, cx, cy, count, spread, color, speed) {
+    const rgb = hexToRgb(color);
     for (let i = 0; i < count; i++) {
         const a = (i / count) * Math.PI * 2 + t * speed;
         const dist = spread + Math.sin(t * 2 + i * 1.7) * (spread * 0.3);
@@ -35,7 +42,7 @@ function drawParticles(ctx, t, cx, cy, count, spread, color, speed) {
         const py = cy + Math.sin(a) * dist;
         const s = 1.5 + Math.sin(t * 3 + i * 2.1) * 1;
         const alpha = 0.3 + Math.sin(t * 2.5 + i * 1.3) * 0.2;
-        ctx.fillStyle = `rgba(${hexToRgb(color).r},${hexToRgb(color).g},${hexToRgb(color).b},${alpha})`;
+        ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${alpha})`;
         ctx.beginPath();
         ctx.arc(px, py, s, 0, Math.PI * 2);
         ctx.fill();
@@ -98,6 +105,11 @@ export class UISystem {
         this.shopScreen = null;
         this.announcement = null;
         this.hudTimer = 0;
+
+        this._discordLogo = null;
+        const dImg = new Image();
+        dImg.src = 'assets/discord-logo.png';
+        dImg.onload = () => { this._discordLogo = dImg; };
         this.menuBg = new MenuBackground();
         this.menuBg.load();
         this.mouseX = 0;
@@ -105,6 +117,13 @@ export class UISystem {
         this._toggleAnim = { mute: 0, fullscreen: 0 };
         this._resetNotify = 0;
         this._muteNotify = { active: false, muted: false, timer: 0 };
+        this._mouseDown = false;
+        this._lastHoveredBtn = null;
+        this._sound = null;
+        this._shopDisplayCoins = 0;
+        this._shopTarget = 0;
+        this._shopCoinAnimDir = 0;
+        this._shopCoinAnimTimer = 0;
         this.particles = [];
         for (let i = 0; i < 40; i++) {
             this.particles.push({
@@ -122,6 +141,55 @@ export class UISystem {
     setMousePos(x, y) {
         this.mouseX = x;
         this.mouseY = y;
+    }
+
+    setSound(sound) {
+        this._sound = sound;
+    }
+
+    showTooltip(text, x, y) {
+        this._tooltip = { text, x, y };
+    }
+
+    hideTooltip() {
+        this._tooltip = null;
+    }
+
+    drawTooltip(ctx) {
+        if (!this._tooltip) return;
+        const tt = this._tooltip;
+        const W = GAME.WIDTH;
+
+        ctx.font = `500 13px ${FB}`;
+        const textW = ctx.measureText(tt.text).width;
+        const padX = 12;
+        const padY = 8;
+        const ttW = textW + padX * 2;
+        const ttH = 28;
+
+        let tx = Math.min(tt.x - ttW / 2, W - ttW - 10);
+        tx = Math.max(10, tx);
+        let ty = tt.y - ttH - 8;
+        if (ty < 10) ty = tt.y + 20;
+
+        ctx.fillStyle = 'rgba(10,10,12,0.9)';
+        ctx.beginPath();
+        ctx.roundRect(tx, ty, ttW, ttH, 6);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(184,217,78,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(tx, ty, ttW, ttH, 6);
+        ctx.stroke();
+
+        ctx.fillStyle = '#e8e4dc';
+        ctx.font = `500 13px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(tt.text, tx + ttW / 2, ty + ttH / 2);
+
+        this._tooltip = null;
     }
 
     setPassiveLevels(levels) {
@@ -145,6 +213,126 @@ export class UISystem {
 
     showMuteNotify(isMuted) {
         this._muteNotify = { active: true, muted: isMuted, timer: 4.0 };
+    }
+
+    showWeaponUnlock(name, icon) {
+        this._weaponUnlock = { name, icon, timer: 3.0, maxTimer: 3.0 };
+    }
+
+    showAchievementPopup(achievement) {
+        this._achievementPopup = {
+            name: achievement.name,
+            icon: achievement.icon,
+            desc: achievement.desc || '',
+            timer: 4.0,
+            maxTimer: 4.0
+        };
+    }
+
+    drawAchievementPopup(ctx) {
+        if (!this._achievementPopup || this._achievementPopup.timer <= 0) return;
+        const ap = this._achievementPopup;
+        const elapsed = ap.maxTimer - ap.timer;
+        const W = GAME.WIDTH;
+
+        let alpha;
+        if (elapsed < 0.4) alpha = elapsed / 0.4;
+        else if (elapsed < 3.0) alpha = 1;
+        else alpha = Math.max(0, 1 - (elapsed - 3.0) / 0.6);
+
+        if (alpha <= 0) return;
+
+        const slideY = -80 + Math.min(1, elapsed * 3) * 80;
+        const panelW = 320;
+        const panelH = 60;
+        const px = W / 2 - panelW / 2;
+        const py = 10 + slideY;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+
+        drawGlassPanel(ctx, px, py, panelW, panelH, 12, { r: 196, g: 162, b: 58 });
+        drawGlowBorder(ctx, px - 1, py - 1, panelW + 2, panelH + 2, 13, '#c4a23a', this.hudTimer, 10);
+
+        ctx.fillStyle = '#c4a23a';
+        ctx.font = `bold 12px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('\u2B50 ACHIEVEMENT UNLOCKED', px + panelW / 2, py + 8);
+
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold 18px ${FD}`;
+        ctx.fillText(`${ap.icon}  ${ap.name}`, px + panelW / 2, py + 26);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = `500 11px ${FB}`;
+        ctx.fillText(ap.desc, px + panelW / 2, py + 48);
+
+        ctx.globalAlpha = 1;
+        ctx.restore();
+    }
+
+    drawWeaponUnlockBanner(ctx) {
+        if (!this._weaponUnlock || this._weaponUnlock.timer <= 0) return;
+        const wu = this._weaponUnlock;
+        const W = GAME.WIDTH;
+        const elapsed = wu.maxTimer - wu.timer;
+
+        const slideInDur = 0.4;
+        const holdStart = slideInDur;
+        const holdEnd = 2.2;
+        const slideOutDur = 0.4;
+        const total = wu.maxTimer;
+
+        let progress;
+        if (elapsed < slideInDur) {
+            progress = elapsed / slideInDur;
+            progress = 1 - (1 - progress) * (1 - progress);
+        } else if (elapsed < holdEnd) {
+            progress = 1;
+        } else if (elapsed < holdEnd + slideOutDur) {
+            progress = 1 - (elapsed - holdEnd) / slideOutDur;
+            progress = progress * progress;
+        } else {
+            return;
+        }
+
+        let alpha;
+        if (elapsed < 0.2) alpha = elapsed / 0.2;
+        else if (elapsed < holdEnd - 0.3) alpha = 1;
+        else if (elapsed < holdEnd) alpha = 1;
+        else alpha = Math.max(0, 1 - (elapsed - holdEnd) / slideOutDur);
+
+        if (alpha <= 0) return;
+
+        const bannerH = 80;
+        const bannerW = 420;
+        const bannerX = (W - bannerW) / 2;
+        const targetY = 10;
+        const offY = -bannerH - 20;
+        const bannerY = targetY + (offY - targetY) * (1 - progress);
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+
+        drawGlassPanel(ctx, bannerX, bannerY, bannerW, bannerH, 12, { r: 124, g: 154, b: 78 });
+
+        ctx.fillStyle = '#b8d94e';
+        ctx.font = `bold 13px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('NEW WEAPON UNLOCKED', bannerX + bannerW / 2, bannerY + 8);
+
+        ctx.shadowColor = '#b8d94e';
+        ctx.shadowBlur = 16;
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold 30px ${FD}`;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${wu.icon}  ${wu.name}`, bannerX + bannerW / 2, bannerY + bannerH / 2 + 6);
+        ctx.shadowBlur = 0;
+
+        ctx.globalAlpha = 1;
+        ctx.restore();
     }
 
     updateParticles(dt) {
@@ -412,8 +600,10 @@ export class UISystem {
             ctx.fillText('\uD83D\uDCB0', coinX + 22, coinY + coinPillH / 2);
             ctx.fillStyle = '#e8e4dc';
             ctx.font = `bold 20px ${FD}`;
-            ctx.fillText(`${runCoins}`, coinX + coinPillW / 2 + 10, coinY + coinPillH / 2);
+            ctx.fillText(`${Math.floor(runCoins)}`, coinX + coinPillW / 2 + 10, coinY + coinPillH / 2);
         }
+
+
 
         // ===== BOTTOM LEFT: HP + XP + Level =====
         const bottomY = H - pad;
@@ -458,13 +648,26 @@ export class UISystem {
         const xpPct = Math.max(0, xp / xpToNext);
         this.drawBar(ctx, barX, xpY + 16, xpBarW, xpBarH, xpPct, '#9b59b6', '#8e44ad', '#7d3c98', t);
 
+        if (xpPct > 0.7) {
+            const glowIntensity = (xpPct - 0.7) / 0.3;
+            ctx.save();
+            ctx.shadowColor = '#c084fc';
+            ctx.shadowBlur = 8 + glowIntensity * 12;
+            ctx.strokeStyle = `rgba(192,132,252,${0.2 + glowIntensity * 0.4})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(barX - 1, xpY + 15, xpBarW + 2, xpBarH + 2, 4);
+            ctx.stroke();
+            ctx.restore();
+        }
+
         ctx.shadowColor = '#000';
         ctx.shadowBlur = 2;
         ctx.fillStyle = '#fff';
         ctx.font = `600 13px ${FB}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`${xp} / ${xpToNext}`, barX + xpBarW / 2, xpY + 16 + xpBarH / 2);
+        ctx.fillText(`${Math.floor(xp)} / ${xpToNext}`, barX + xpBarW / 2, xpY + 16 + xpBarH / 2);
         ctx.shadowBlur = 0;
 
         // Level badge
@@ -862,8 +1065,8 @@ export class UISystem {
 
         // Dark overlay with vignette
         const vigGrad = ctx.createRadialGradient(W / 2, H / 2, 100, W / 2, H / 2, W * 0.7);
-        vigGrad.addColorStop(0, 'rgba(0,0,0,0.75)');
-        vigGrad.addColorStop(1, 'rgba(0,0,0,0.92)');
+        vigGrad.addColorStop(0, 'rgba(0,0,0,0.88)');
+        vigGrad.addColorStop(1, 'rgba(0,0,0,0.95)');
         ctx.fillStyle = vigGrad;
         ctx.fillRect(0, 0, W, H);
 
@@ -1175,7 +1378,10 @@ export class UISystem {
                 const nextLvl = choice.currentLevel + 1;
                 return `Rings: ${choice.currentLevel} \u2192 ${nextLvl}`;
             }
-            return `Level ${choice.currentLevel} \u2192 ${choice.currentLevel + 1}`;
+            const dmgStr = choice.currentDamage && choice.nextDamage
+                ? `Damage: ${choice.currentDamage} \u2192 ${choice.nextDamage}`
+                : `Level ${choice.currentLevel} \u2192 ${choice.currentLevel + 1}`;
+            return dmgStr;
         }
         const map = {
             damage: 'Thorn Damage +20%',
@@ -1584,9 +1790,11 @@ export class UISystem {
         const W = GAME.WIDTH;
         const H = GAME.HEIGHT;
 
+        this._gameOverData = stats;
+
         const vigGrad = ctx.createRadialGradient(W / 2, H / 2, 100, W / 2, H / 2, W * 0.65);
-        vigGrad.addColorStop(0, 'rgba(0,0,0,0.7)');
-        vigGrad.addColorStop(1, 'rgba(0,0,0,0.93)');
+        vigGrad.addColorStop(0, 'rgba(0,0,0,0.88)');
+        vigGrad.addColorStop(1, 'rgba(0,0,0,0.95)');
         ctx.fillStyle = vigGrad;
         ctx.fillRect(0, 0, W, H);
 
@@ -1689,39 +1897,63 @@ export class UISystem {
         const btnH = 50;
         const btnGap = 20;
 
-        // Calculate extra space needed for synergies/achievements
-        let extraSpace = 0;
+        // Calculate extra space needed for synergies/achievements/weapon log
         const hasSynergies = stats.activeSynergies && stats.activeSynergies.length > 0;
         const hasAchievements = stats.newAchievements && stats.newAchievements.length > 0;
-        if (hasSynergies) extraSpace += 22;
-        if (hasAchievements) extraSpace += 40;
-        const btnY = statY + statH + 35 + extraSpace;
+        const hasWeaponLog = stats.weaponDamageLog && Object.keys(stats.weaponDamageLog).length > 0;
 
-        // Active synergies display
+        let belowY = statY + statH + 10;
+
+        if (hasWeaponLog) {
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = `bold 13px ${FD}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText('TOP WEAPONS BY DAMAGE', W / 2, belowY);
+            const sorted = Object.entries(stats.weaponDamageLog)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3);
+            const weaponNames = { arcane_bolt: 'Seeds of Sorrow', orbiting_blade: 'Thorn Circle', holy_pulse: 'Bursting Pods', lightning_mark: 'Withering Hex', spore_swarm: 'Spore Swarm', doom_blossom: 'Doom Blossom', storm_sovereign: 'Storm Sovereign', storm_cascade: 'Storm Cascade', blight_plague: 'Blight Plague' };
+            const weaponColors = { arcane_bolt: '#7c9a6e', orbiting_blade: '#8b3a62', holy_pulse: '#b8d94e', lightning_mark: '#c4a23a', spore_swarm: '#6a9a3c', doom_blossom: '#9b59b6', storm_sovereign: '#3498db', storm_cascade: '#1abc9c', blight_plague: '#8e44ad' };
+            for (let i = 0; i < sorted.length; i++) {
+                const [id, dmg] = sorted[i];
+                const wx = W / 2 - 160 + i * 160;
+                const wy = belowY + 18;
+                ctx.fillStyle = weaponColors[id] || '#888';
+                ctx.font = `600 12px ${FB}`;
+                ctx.fillText(weaponNames[id] || id, wx, wy);
+                ctx.fillStyle = '#e8e4dc';
+                ctx.font = `bold 16px ${FD}`;
+                ctx.fillText(Math.floor(dmg).toLocaleString(), wx, wy + 16);
+            }
+            belowY += 55;
+        }
+
         if (hasSynergies) {
-            const synY = statY + statH + 10;
             ctx.fillStyle = 'rgba(255,255,255,0.4)';
             ctx.font = `500 12px ${FB}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
             const synText = stats.activeSynergies.map(s => `${s.icon} ${s.name}`).join('  \u2022  ');
-            ctx.fillText(synText, W / 2, synY);
+            ctx.fillText(synText, W / 2, belowY);
+            belowY += 22;
         }
 
-        // New achievements
         if (hasAchievements) {
-            const achY = statY + statH + 28 + (hasSynergies ? 22 : 0);
             const achAlpha = 0.7 + Math.sin(this.hudTimer * 3) * 0.3;
             ctx.fillStyle = `rgba(196,162,58,${achAlpha})`;
             ctx.font = `bold 13px ${FD}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
-            ctx.fillText('\u2B50 ACHIEVEMENTS UNLOCKED', W / 2, achY);
+            ctx.fillText('\u2B50 ACHIEVEMENTS UNLOCKED', W / 2, belowY);
             ctx.fillStyle = '#e8e4dc';
             ctx.font = `500 12px ${FB}`;
             const achText = stats.newAchievements.map(a => `${a.icon} ${a.name}`).join('  \u2022  ');
-            ctx.fillText(achText, W / 2, achY + 18);
+            ctx.fillText(achText, W / 2, belowY + 18);
+            belowY += 40;
         }
+
+        const btnY = belowY + 10;
 
         // Store button rects for hit testing
         const btn3W = 200;
@@ -1851,6 +2083,10 @@ export class UISystem {
     showShop(shopSystem) {
         this.shopScreen = { shopSystem, animTimer: 0 };
         this.gameOverScreen = null;
+        this._shopDisplayCoins = shopSystem.totalCoins;
+        this._shopTarget = shopSystem.totalCoins;
+        this._shopCoinAnimDir = 0;
+        this._shopCoinAnimTimer = 0;
     }
 
     hideShop() { this.shopScreen = null; }
@@ -1915,13 +2151,30 @@ export class UISystem {
 
         // Total coins
         ctx.save();
-        ctx.shadowColor = '#f39c12';
-        ctx.shadowBlur = 15;
-        ctx.fillStyle = '#f39c12';
+
+        const targetCoins = shopSystem.totalCoins;
+        const diff = targetCoins - this._shopDisplayCoins;
+
+        if (Math.abs(diff) > 1 && this._shopCoinAnimTimer <= 0) {
+            this._shopCoinAnimTimer = 1.0;
+            this._shopCoinAnimDir = diff < 0 ? -1 : 1;
+        }
+        if (this._shopCoinAnimTimer > 0) this._shopCoinAnimTimer -= 0.016;
+        this._shopDisplayCoins += diff * 0.12;
+        if (Math.abs(diff) < 0.5) this._shopDisplayCoins = targetCoins;
+
+        const isSpending = this._shopCoinAnimDir < 0 && this._shopCoinAnimTimer > 0;
+        const intensity = this._shopCoinAnimTimer;
+        const shakeX = isSpending ? Math.sin(t * 30) * 6 * intensity : 0;
+        const shakeY = isSpending ? Math.cos(t * 25) * 3 * intensity : 0;
+
+        ctx.shadowColor = isSpending ? '#ff4444' : '#f39c12';
+        ctx.shadowBlur = isSpending ? 25 : 15;
+        ctx.fillStyle = isSpending ? '#ff6b6b' : '#f39c12';
         ctx.font = `bold 32px ${FD}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`\uD83D\uDCB0  ${shopSystem.totalCoins}`, W / 2, 175);
+        ctx.fillText(`\uD83D\uDCB0  ${Math.round(this._shopDisplayCoins)}`, W / 2 + shakeX, 175 + shakeY);
         ctx.shadowBlur = 0;
         ctx.restore();
 
@@ -2033,7 +2286,8 @@ export class UISystem {
         const resetW = 220;
         const totalBtnW = backW + resetW + btnGap;
         const btnStartX = (W - totalBtnW) / 2;
-        const btnY = startY + 2 * (cardH + gapY) + 20;
+        const totalRows = Math.ceil(keys.length / 3);
+        const btnY = startY + totalRows * (cardH + gapY) + 10;
 
         // Back to Menu button
         const backX = btnStartX;
@@ -2855,6 +3109,56 @@ export class UISystem {
             ctx.fillText(`v${version}`, W - 20, H - 12);
         }
 
+        // Discord button - bottom left
+        const discordBtnW = 160;
+        const discordBtnH = 36;
+        const discordX = 20;
+        const discordY = H - 20 - discordBtnH;
+        const discordHovered = !this._menuPopupActive &&
+            this.mouseX >= discordX && this.mouseX <= discordX + discordBtnW &&
+            this.mouseY >= discordY && this.mouseY <= discordY + discordBtnH;
+
+        const dGrad = ctx.createLinearGradient(discordX, discordY, discordX, discordY + discordBtnH);
+        dGrad.addColorStop(0, discordHovered ? '#5865F2' : 'rgba(88,101,242,0.35)');
+        dGrad.addColorStop(1, discordHovered ? '#4752C4' : 'rgba(71,82,196,0.25)');
+        ctx.fillStyle = dGrad;
+        ctx.beginPath();
+        ctx.roundRect(discordX, discordY, discordBtnW, discordBtnH, 10);
+        ctx.fill();
+
+        if (discordHovered) {
+            ctx.shadowColor = '#5865F2';
+            ctx.shadowBlur = 12;
+        }
+        ctx.strokeStyle = discordHovered ? '#7289DA' : 'rgba(114,137,218,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(discordX, discordY, discordBtnW, discordBtnH, 10);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Discord icon
+        if (this._discordLogo) {
+            const iconW = 36;
+            const iconH = 22;
+            ctx.drawImage(this._discordLogo, discordX + 10, discordY + (discordBtnH - iconH) / 2, iconW, iconH);
+        } else {
+            ctx.fillStyle = discordHovered ? '#fff' : 'rgba(255,255,255,0.7)';
+            ctx.font = `600 14px ${FB}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Discord', discordX + discordBtnW / 2, discordY + discordBtnH / 2);
+        }
+
+        // Discord text
+        ctx.fillStyle = discordHovered ? '#fff' : 'rgba(255,255,255,0.7)';
+        ctx.font = `600 15px ${FB}`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Discord', discordX + (this._discordLogo ? 52 : 14), discordY + discordBtnH / 2);
+
+        this._menuRects['discord'] = { x: discordX, y: discordY, w: discordBtnW, h: discordBtnH };
+
         if (this._menuPopupActive) {
             if (!this._blurCanvas) {
                 this._blurCanvas = document.createElement('canvas');
@@ -3111,12 +3415,23 @@ export class UISystem {
         const hovered = !this._menuPopupActive &&
                         this.mouseX >= bx && this.mouseX <= bx + bw &&
                         this.mouseY >= by && this.mouseY <= by + bh;
+
+        if (hovered && this._lastHoveredBtn !== btn.id) {
+            this._lastHoveredBtn = btn.id;
+            if (this._sound) this._sound.playHover();
+        }
+        if (!hovered && this._lastHoveredBtn === btn.id) {
+            this._lastHoveredBtn = null;
+        }
+
+        const isMouseDown = hovered && this._mouseDown;
         const pulse = hovered ? 1 + Math.sin(t * 4) * 0.02 : 1;
+        const squish = isMouseDown ? 0.95 : 1;
         const isBegin = btn.id === 'begin';
 
         ctx.save();
         ctx.translate(bx + bw / 2, by + bh / 2);
-        ctx.scale(pulse, pulse);
+        ctx.scale(pulse * squish, pulse * squish);
         ctx.translate(-bw / 2, -bh / 2);
 
         // Outer glow aura for Begin button
@@ -3765,6 +4080,27 @@ export class UISystem {
             ctx.moveTo(W / 2 - divLen, H * 0.58);
             ctx.lineTo(W / 2 + divLen, H * 0.58);
             ctx.stroke();
+        }
+
+        // Loading tip
+        const tips = [
+            'Dodge enemy waves and collect XP gems to level up',
+            'Open chests to find powerful weapon evolutions',
+            'Combine a weapon at Lv.8 with its required passive at Lv.3 to evolve',
+            'Dash with SPACE to dodge through enemies',
+
+            'Visit the Bloomkeeper\'s Sanctum to upgrade between runs',
+            'Health potions spawn on the ground when you are wounded',
+            'Bosses drop treasure chests with powerful rewards'
+        ];
+        const tipIdx = Math.floor(t / 3.5) % tips.length;
+        const tipAlpha = Math.min(1, t / 2) * Math.min(1, (this.introScreen.totalDur - t) / 1.5) * 0.5;
+        if (tipAlpha > 0) {
+            ctx.fillStyle = `rgba(184,217,78,${tipAlpha})`;
+            ctx.font = `500 14px ${FB}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(`TIP: ${tips[tipIdx]}`, W / 2, H - 80);
         }
 
         // Skip button

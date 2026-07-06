@@ -150,6 +150,37 @@ export class Renderer {
         this._vignetteH = 0;
 
         this._gradingFill = null;
+
+        this._grainCanvas = document.createElement('canvas');
+        this._grainCanvas.width = w;
+        this._grainCanvas.height = h;
+        this._grainCtx = this._grainCanvas.getContext('2d');
+        this._grainFrames = [];
+        this._grainFrameIdx = 0;
+        this._generateGrainFrames(6);
+
+        this.levelUpFlash = 0;
+        this.chromaticStrength = 0;
+        this.colorShiftAmount = 0;
+    }
+
+    _generateGrainFrames(count) {
+        const w = this._grainCanvas.width;
+        const h = this._grainCanvas.height;
+        for (let f = 0; f < count; f++) {
+            const c = document.createElement('canvas');
+            c.width = w;
+            c.height = h;
+            const gctx = c.getContext('2d');
+            const imgData = gctx.createImageData(w, h);
+            const d = imgData.data;
+            for (let i = 0; i < d.length; i += 4) {
+                const v = Math.random() * 255;
+                d[i] = v; d[i + 1] = v; d[i + 2] = v; d[i + 3] = 255;
+            }
+            gctx.putImageData(imgData, 0, 0);
+            this._grainFrames.push(c);
+        }
     }
 
     _ensureVignette(w, h) {
@@ -213,6 +244,18 @@ export class Renderer {
         this.screenFlash = { r, g, b, alpha, timer: duration, maxTimer: duration };
     }
 
+    flashLevelUp() {
+        this.levelUpFlash = 0.15;
+    }
+
+    setChromaticStrength(s) {
+        this.chromaticStrength = Math.max(this.chromaticStrength, s);
+    }
+
+    setColorShift(amount) {
+        this.colorShiftAmount = Math.max(this.colorShiftAmount, amount);
+    }
+
     hitStop(duration) {
         this.hitStopTimer = Math.max(this.hitStopTimer, duration);
     }
@@ -257,6 +300,15 @@ export class Renderer {
         }
         if (this.screenFlash.timer > 0) {
             this.screenFlash.timer -= dt;
+        }
+        if (this.levelUpFlash > 0) {
+            this.levelUpFlash -= dt * 3;
+        }
+        if (this.chromaticStrength > 0) {
+            this.chromaticStrength -= dt * 2;
+        }
+        if (this.colorShiftAmount > 0) {
+            this.colorShiftAmount -= dt * 0.5;
         }
         return false;
     }
@@ -335,13 +387,64 @@ export class Renderer {
         }
     }
 
-    drawPostProcess(ctx, elapsedTime) {
+    drawPostProcess(ctx, elapsedTime, playerHpPct) {
         const w = GAME.WIDTH;
         const h = GAME.HEIGHT;
         const biomeIdx = elapsedTime !== undefined ? this.getBiomeIndex(elapsedTime) : 0;
         this.applyBloom(ctx, w, h, 0.1);
         this.applyColorGrading(ctx, w, h, biomeIdx);
         this.applyVignette(ctx, w, h);
+
+        if (this.levelUpFlash > 0) {
+            ctx.save();
+            ctx.globalAlpha = this.levelUpFlash * 4;
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, w, h);
+            ctx.restore();
+        }
+
+        if (playerHpPct !== undefined && playerHpPct < 0.25 && playerHpPct > 0) {
+            const intensity = (0.25 - playerHpPct) / 0.25;
+            ctx.save();
+            const vigGrad = ctx.createRadialGradient(w / 2, h / 2, w * 0.3, w / 2, h / 2, w * 0.7);
+            vigGrad.addColorStop(0, 'rgba(0,0,0,0)');
+            vigGrad.addColorStop(1, `rgba(120,20,20,${0.35 * intensity})`);
+            ctx.fillStyle = vigGrad;
+            ctx.fillRect(0, 0, w, h);
+            ctx.restore();
+        }
+
+        if (this.chromaticStrength > 0.05) {
+            const offset = Math.round(this.chromaticStrength * 3);
+            if (offset > 0) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(ctx.canvas, -offset, 0);
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.globalAlpha = 0.5;
+                ctx.drawImage(ctx.canvas, offset, 0);
+                ctx.restore();
+            }
+        }
+
+        if (this.colorShiftAmount > 0.01) {
+            ctx.save();
+            ctx.globalAlpha = this.colorShiftAmount * 0.3;
+            ctx.fillStyle = '#1a0a0a';
+            ctx.fillRect(0, 0, w, h);
+            ctx.restore();
+        }
+
+        const grainAlpha = 0.04;
+        if (this._grainFrames.length > 0) {
+            this._grainFrameIdx = (this._grainFrameIdx + 1) % this._grainFrames.length;
+            ctx.save();
+            ctx.globalAlpha = grainAlpha;
+            ctx.globalCompositeOperation = 'overlay';
+            ctx.drawImage(this._grainFrames[this._grainFrameIdx], 0, 0);
+            ctx.restore();
+        }
+
         this.drawScreenFlash(ctx);
     }
 

@@ -64,6 +64,7 @@ export class WeaponManager {
 
         for (let w = 0; w < this.weapons.length; w++) {
             const weapon = this.weapons[w];
+            this._lastHitWeapon = weapon.typeId;
             weapon.update(dt, playerX, playerY, hostiles,
                 this.globalDamageMulti, this.globalCooldownMulti, this.globalSpeedMulti,
                 {
@@ -150,6 +151,7 @@ export class WeaponManager {
     }
 
     getProjectiles() { return this.projectiles; }
+    getLastHitWeapon() { return this._lastHitWeapon; }
 
     draw(ctx, psx, psy, pwx, pwy) {
         for (let i = 0; i < this.weapons.length; i++) {

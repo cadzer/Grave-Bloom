@@ -151,4 +151,9 @@ export class SoundSystem {
         setTimeout(() => this._tone(900, 0.15, 'sine', 0.1), 100);
         setTimeout(() => this._tone(1200, 0.2, 'sine', 0.1), 200);
     }
+
+    playHover() {
+        this._init();
+        this._tone(800, 0.03, 'sine', 0.02);
+    }
 }
