@@ -41,6 +41,99 @@ export class Structures {
         this.chunks = new Map();
         this.allStructures = [];
         this.allRoads = [];
+        this._houseImages = [];
+        this._houseImagesLoaded = false;
+        this._castleImage = null;
+        this._collisionMasks = new Map();
+        this._loadHouseImages();
+    }
+
+    _loadHouseImages() {
+        const urls = ['assets/house1.png', 'assets/house2.png'];
+        let loaded = 0;
+        for (const url of urls) {
+            const img = new Image();
+            img.onload = () => {
+                loaded++;
+                if (loaded === urls.length) this._houseImagesLoaded = true;
+                this._buildCollisionMask(url, img);
+            };
+            img.src = url;
+            this._houseImages.push(img);
+        }
+        this._castleImage = new Image();
+        this._castleImage.onload = () => {
+            this._buildCollisionMask('assets/castle1.png', this._castleImage);
+        };
+        this._castleImage.src = 'assets/castle1.png';
+    }
+
+    _buildCollisionMask(url, img) {
+        const step = 4;
+        const cw = Math.ceil(img.naturalWidth / step);
+        const ch = Math.ceil(img.naturalHeight / step);
+        const offscreen = document.createElement('canvas');
+        offscreen.width = img.naturalWidth;
+        offscreen.height = img.naturalHeight;
+        const octx = offscreen.getContext('2d');
+        octx.drawImage(img, 0, 0);
+        const data = octx.getImageData(0, 0, img.naturalWidth, img.naturalHeight).data;
+        const grid = [];
+        for (let gy = 0; gy < ch; gy++) {
+            const row = [];
+            for (let gx = 0; gx < cw; gx++) {
+                let opaque = false;
+                for (let dy = 0; dy < step && !opaque; dy++) {
+                    for (let dx = 0; dx < step && !opaque; dx++) {
+                        const px = gx * step + dx;
+                        const py = gy * step + dy;
+                        if (px < img.naturalWidth && py < img.naturalHeight) {
+                            const idx = (py * img.naturalWidth + px) * 4;
+                            if (data[idx + 3] > 60) opaque = true;
+                        }
+                    }
+                }
+                row.push(opaque);
+            }
+            grid.push(row);
+        }
+        const rects = this._buildCollisionRects(grid, step, img.naturalWidth, img.naturalHeight);
+        this._collisionMasks.set(url, { grid, step, w: cw, h: ch, imgW: img.naturalWidth, imgH: img.naturalHeight, rects });
+    }
+
+    _buildCollisionRects(grid, step, imgW, imgH) {
+        const visited = [];
+        for (let i = 0; i < grid.length; i++) visited.push(new Array(grid[i].length).fill(false));
+        const rects = [];
+        const blockW = 3;
+        const blockH = 3;
+        for (let gy = 0; gy < grid.length; gy++) {
+            for (let gx = 0; gx < grid[gy].length; gx++) {
+                if (visited[gy][gx] || !grid[gy][gx]) continue;
+                let endX = gx;
+                while (endX < grid[gy].length && !visited[gy][endX] && grid[gy][endX] && endX - gx < blockW) endX++;
+                let endY = gy + 1;
+                outer:
+                while (endY < grid.length && endY - gy < blockH) {
+                    for (let cx = gx; cx < endX; cx++) {
+                        if (visited[endY][cx] || !grid[endY][cx]) break outer;
+                    }
+                    endY++;
+                }
+                for (let ry = gy; ry < endY; ry++) {
+                    for (let rx = gx; rx < endX; rx++) {
+                        visited[ry][rx] = true;
+                    }
+                }
+                rects.push({
+                    x: gx * step,
+                    y: gy * step,
+                    w: (endX - gx) * step,
+                    h: (endY - gy) * step
+                });
+            }
+        }
+        return rects;
     }
 
     getChunk(cx, cy) {
@@ -138,6 +231,8 @@ export class Structures {
                 const doorStyle = doorStyles[Math.floor(rng() * doorStyles.length)];
                 const winLayouts = ['two', 'three', 'one_center', 'asymmetric'];
                 const windowLayout = winLayouts[Math.floor(rng() * winLayouts.length)];
+                const useImage = this._houseImagesLoaded && this._houseImages.length > 0 && rng() > 0.4;
+                const imageIdx = useImage ? Math.floor(rng() * this._houseImages.length) : -1;
                 return {
                     type, x, y, w, h, angle,
                     wallColor: `hsl(${30 + rng() * 20}, ${wallS}%, ${wallH}%)`,
@@ -156,7 +251,8 @@ export class Structures {
                     hasFlowerBox: rng() > 0.6,
                     flowerColor: `hsl(${80 + rng() * 60}, ${30 + rng() * 20}%, ${30 + rng() * 15}%)`,
                     hasAwning: rng() > 0.65,
-                    awningColor: `hsl(${rng() * 360}, ${20 + rng() * 15}%, ${18 + rng() * 10}%)`
+                    awningColor: `hsl(${rng() * 360}, ${20 + rng() * 15}%, ${18 + rng() * 10}%)`,
+                    imageIdx
                 };
             }
             case 'fence': {
@@ -208,6 +304,7 @@ export class Structures {
                 const wallPattern = wallPatterns[Math.floor(rng() * wallPatterns.length)];
                 const battlementStyles = ['square', 'stepped'];
                 const battlementStyle = battlementStyles[Math.floor(rng() * battlementStyles.length)];
+                const useCastleImage = this._castleImage && this._castleImage.complete && this._castleImage.naturalWidth > 0;
                 return {
                     type, x, y, w, h, angle,
                     towerCount, towerStyle, gateStyle, wallPattern, battlementStyle,
@@ -220,7 +317,8 @@ export class Structures {
                     hasWell: rng() > 0.6,
                     hasCracks: rng() > 0.5,
                     towerHeight: 28 + rng() * 12,
-                    towerWidth: 24 + rng() * 10
+                    towerWidth: 24 + rng() * 10,
+                    useImage: useCastleImage
                 };
             }
         }
@@ -398,12 +496,17 @@ export class Structures {
     }
 
     _drawHouse(ctx, x, y, s) {
-        const rng = seededRandom(Math.floor(s.seedX * 7 + s.seedY * 13));
+        if (s.imageIdx >= 0 && this._houseImages[s.imageIdx]) {
+            const img = this._houseImages[s.imageIdx];
+            const drawW = s.w * 1.8;
+            const drawH = s.h * 1.8;
+            const drawX = x - (drawW - s.w) / 2;
+            const drawY = y - (drawH - s.h) - 10;
 
-        ctx.fillStyle = 'rgba(0,0,0,0.18)';
-        ctx.beginPath();
-        ctx.ellipse(x + s.w / 2 + 4, y + s.h + 4, s.w * 0.42, 5, 0, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+            return;
+        }
+        const rng = seededRandom(Math.floor(s.seedX * 7 + s.seedY * 13));
 
         ctx.fillStyle = s.wallColor;
         ctx.fillRect(x, y + 14, s.w, s.h - 14);
@@ -981,12 +1084,17 @@ export class Structures {
     }
 
     _drawCastle(ctx, x, y, s) {
-        const rng = seededRandom(Math.floor(s.seedX * 3 + s.seedY * 7));
+        if (s.useImage && this._castleImage) {
+            const img = this._castleImage;
+            const drawW = s.w * 1.6;
+            const drawH = s.h * 1.6;
+            const drawX = x - (drawW - s.w) / 2;
+            const drawY = y - (drawH - s.h) - 5;
 
-        ctx.fillStyle = 'rgba(0,0,0,0.22)';
-        ctx.beginPath();
-        ctx.ellipse(x + s.w / 2 + 8, y + s.h + 6, s.w * 0.44, 8, 0, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+            return;
+        }
+        const rng = seededRandom(Math.floor(s.seedX * 3 + s.seedY * 7));
 
         ctx.fillStyle = s.wallColor;
         ctx.fillRect(x, y, s.w, s.h);
@@ -1353,7 +1461,38 @@ export class Structures {
             const dx = s.x + s.w / 2 - playerX;
             const dy = s.y + s.h / 2 - playerY;
             if (dx * dx + dy * dy < 400 * 400) {
-                colliders.push({ x: s.x, y: s.y, w: s.w, h: s.h });
+                const isHouseImage = s.type === 'house' && s.imageIdx >= 0;
+                const isCastleImage = s.type === 'castle' && s.useImage;
+                if (isHouseImage || isCastleImage) {
+                    const maskUrl = s.type === 'castle' ? 'assets/castle1.png' : `assets/house${s.imageIdx + 1}.png`;
+                    const mask = this._collisionMasks.get(maskUrl);
+                    const scale = s.type === 'castle' ? 1.6 : 1.8;
+                    const extraUp = s.type === 'castle' ? 5 : 10;
+                    if (mask && mask.rects) {
+                        const drawW = s.w * scale;
+                        const drawH = s.h * scale;
+                        const drawX = s.x - (drawW - s.w) / 2;
+                        const drawY = s.y - (drawH - s.h) - extraUp;
+                        const scaleX = drawW / mask.imgW;
+                        const scaleY = drawH / mask.imgH;
+                        for (const r of mask.rects) {
+                            colliders.push({
+                                x: drawX + r.x * scaleX,
+                                y: drawY + r.y * scaleY,
+                                w: r.w * scaleX,
+                                h: r.h * scaleY
+                            });
+                        }
+                    } else {
+                        const cw = s.w * scale;
+                        const ch = s.h * scale;
+                        const cx = s.x - (cw - s.w) / 2;
+                        const cy = s.y - (ch - s.h) - extraUp;
+                        colliders.push({ x: cx, y: cy, w: cw, h: ch });
+                    }
+                } else {
+                    colliders.push({ x: s.x, y: s.y, w: s.w, h: s.h });
+                }
             }
         }
         return colliders;
@@ -1366,7 +1505,38 @@ export class Structures {
             const dx = s.x + s.w / 2 - ex;
             const dy = s.y + s.h / 2 - ey;
             if (dx * dx + dy * dy < range * range) {
-                colliders.push({ x: s.x, y: s.y, w: s.w, h: s.h });
+                const isHouseImage = s.type === 'house' && s.imageIdx >= 0;
+                const isCastleImage = s.type === 'castle' && s.useImage;
+                if (isHouseImage || isCastleImage) {
+                    const maskUrl = s.type === 'castle' ? 'assets/castle1.png' : `assets/house${s.imageIdx + 1}.png`;
+                    const mask = this._collisionMasks.get(maskUrl);
+                    const scale = s.type === 'castle' ? 1.6 : 1.8;
+                    const extraUp = s.type === 'castle' ? 5 : 10;
+                    if (mask && mask.rects) {
+                        const drawW = s.w * scale;
+                        const drawH = s.h * scale;
+                        const drawX = s.x - (drawW - s.w) / 2;
+                        const drawY = s.y - (drawH - s.h) - extraUp;
+                        const scaleX = drawW / mask.imgW;
+                        const scaleY = drawH / mask.imgH;
+                        for (const r of mask.rects) {
+                            colliders.push({
+                                x: drawX + r.x * scaleX,
+                                y: drawY + r.y * scaleY,
+                                w: r.w * scaleX,
+                                h: r.h * scaleY
+                            });
+                        }
+                    } else {
+                        const cw = s.w * scale;
+                        const ch = s.h * scale;
+                        const cx = s.x - (cw - s.w) / 2;
+                        const cy = s.y - (ch - s.h) - extraUp;
+                        colliders.push({ x: cx, y: cy, w: cw, h: ch });
+                    }
+                } else {
+                    colliders.push({ x: s.x, y: s.y, w: s.w, h: s.h });
+                }
             }
         }
         return colliders;

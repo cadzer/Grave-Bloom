@@ -1,5 +1,7 @@
 import { VERSION, GITHUB_REPO } from '../config/GameConfig.js';
 
+const GITHUB_TOKEN = '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';
+
 export class UpdateChecker {
     constructor() {
         this.currentVersion = VERSION;
@@ -22,7 +24,11 @@ export class UpdateChecker {
         this.checking = true;
         try {
             const url = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
-            const response = await fetch(url);
+            const headers = { 'User-Agent': 'GraveBloom-Updater' };
+            if (GITHUB_TOKEN && GITHUB_TOKEN !== 'YOUR_TOKEN_HERE') {
+                headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+            }
+            const response = await fetch(url, { headers });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
             const data = await response.json();

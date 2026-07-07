@@ -65,12 +65,12 @@ class Game {
         this.fpsTimer = 0;
         this.lastTime = 0;
 
-        this.gameState = 'menu';
+        this.gameState = 'splash';
         this.selectedChar = 'bloomkeeper';
         this.selectedLoadout = 'default';
         this.debug = false;
         this._weaponDamageLog = {};
-        this.ui.showMenu();
+        this.ui.showSplash(this.sound);
 
         this.setupEvents();
         this._fullscreenQueued = (localStorage.getItem('gravebloom_fullscreen') === '1');
@@ -280,6 +280,7 @@ class Game {
 
     startRun() {
         this.sound._init();
+        this.ui.menuMusic.stop();
         this.spawner = new Spawner();
         this.collision = new CollisionSystem();
         this.weaponManager = new WeaponManager(this.sound);
@@ -489,6 +490,16 @@ class Game {
             const mx = (e.clientX - rect.left) * scaleX;
             const my = (e.clientY - rect.top) * scaleY;
 
+            if (this.gameState !== 'splash' && this.gameState !== 'playing') {
+                this.ui._buttonClicked = false;
+                setTimeout(() => {
+                    if (this.ui._buttonClicked) {
+                        this.sound.playClick();
+                        this.ui._buttonClicked = false;
+                    }
+                }, 0);
+            }
+
             if (this.gameState === 'menu') {
                 if (this._showUpdatePopup) {
                     if (this.ui.isUpdatePopupButtonAt(mx, my, 'update')) {
@@ -548,7 +559,11 @@ class Game {
                     return;
                 }
                 if (this.ui.isMenuButtonAt(mx, my, 'discord')) {
-                    window.open('https://discord.gg/9rqvtVQKkB', '_blank');
+                    this.gameState = 'discordconfirm';
+                    return;
+                }
+                if (this.ui.isMenuButtonAt(mx, my, 'music_icon') || this.ui.isMenuButtonAt(mx, my, 'music_pp')) {
+                    this.ui.menuMusic.toggle();
                     return;
                 }
                 if (this.ui.isVersionTextAt(mx, my)) {
@@ -748,6 +763,19 @@ class Game {
                 return;
             }
 
+            if (this.gameState === 'discordconfirm') {
+                if (this.ui.isDiscordConfirmButtonAt(mx, my, 'join')) {
+                    window.open('https://discord.gg/9rqvtVQKkB', '_blank');
+                    this.gameState = 'menu';
+                    return;
+                }
+                if (this.ui.isDiscordConfirmButtonAt(mx, my, 'cancel')) {
+                    this.gameState = 'menu';
+                    return;
+                }
+                return;
+            }
+
             if (this.gameState === 'intro') {
                 if (this.ui.isIntroSkipAt(mx, my)) {
                     this.ui.hideIntro();
@@ -874,6 +902,15 @@ class Game {
             const mx = (e.clientX - rect.left) * scaleX;
             const my = (e.clientY - rect.top) * scaleY;
             this.ui.setMousePos(mx, my);
+
+            if (this.ui._musicSliderDragging && this.gameState === 'menu') {
+                const r = this.ui._menuRects['music_slider'];
+                if (r) {
+                    const ratio = Math.max(0, Math.min(1, (mx - r.x) / r.w));
+                    this.ui.menuMusic.setVolume(ratio);
+                }
+            }
+
             if (this.ui.isLevelUpVisible()) {
                 const idx = this.ui.getLevelUpChoiceAt(mx, my);
                 this.ui.setLevelUpHover(idx);
@@ -896,8 +933,23 @@ class Game {
             }
         });
 
-        this.canvas.addEventListener('mousedown', () => { this.ui._mouseDown = true; });
-        this.canvas.addEventListener('mouseup', () => { this.ui._mouseDown = false; });
+        this.canvas.addEventListener('mousedown', (e) => {
+            this.ui._mouseDown = true;
+            if (this.gameState === 'menu') {
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = GAME.WIDTH / rect.width;
+                const scaleY = GAME.HEIGHT / rect.height;
+                const mx = (e.clientX - rect.left) * scaleX;
+                const my = (e.clientY - rect.top) * scaleY;
+                if (this.ui.isMenuButtonAt(mx, my, 'music_slider')) {
+                    this.ui._musicSliderDragging = true;
+                }
+            }
+        });
+        this.canvas.addEventListener('mouseup', () => {
+            this.ui._mouseDown = false;
+            if (this.ui._musicSliderDragging) this.ui._musicSliderDragging = false;
+        });
         this.canvas.addEventListener('wheel', (e) => {
             if (this.gameState === 'changelog') {
                 e.preventDefault();
@@ -1099,6 +1151,7 @@ class Game {
         }
 
         this.update(dt);
+        this._dt = dt;
         this.render();
         requestAnimationFrame((t) => this.gameLoop(t));
     }
@@ -1114,6 +1167,16 @@ class Game {
 
         if (hitStopped) {
             this.particles.update(dt * 0.2);
+            return;
+        }
+
+        if (this.gameState === 'splash') {
+            const finished = this.ui.updateSplash(dt);
+            if (finished) {
+                this.ui.hideSplash();
+                this.gameState = 'menu';
+                this.ui.showMenu();
+            }
             return;
         }
 
@@ -1206,6 +1269,7 @@ class Game {
 
         if (this.input.isKeyDown('Space') && this.player.canDash()) {
             this.player.startDash();
+            this.sound.playFile('assets/dash-sound.mp3', 0.2);
         }
 
         this.player.update(dt, this.input);
@@ -1443,6 +1507,12 @@ class Game {
 
     render() {
         const ctx = this.ctx;
+        this.ui._dt = this._dt || 0.016;
+
+        if (this.gameState === 'splash') {
+            this.ui.drawSplash(ctx);
+            return;
+        }
 
         if (this.gameState === 'menu') {
             this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker, this._showUpdatePopup);
@@ -1478,6 +1548,12 @@ class Game {
         if (this.gameState === 'exitconfirm') {
             this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker, true);
             this.ui.drawExitConfirm(ctx);
+            return;
+        }
+
+        if (this.gameState === 'discordconfirm') {
+            this.ui.drawMenu(ctx, this.sound, this.debug, this.updateChecker, true);
+            this.ui.drawDiscordConfirm(ctx);
             return;
         }
 

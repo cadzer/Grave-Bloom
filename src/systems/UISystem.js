@@ -1,5 +1,6 @@
 import { GAME, UI, WAVES, CHEST, SHOP_UPGRADES, COINS, WEAPON_TYPES, EVOLUTIONS, ENEMIES, PASSIVES, CHARACTERS, LOADOUTS } from '../config/GameConfig.js';
 import { MenuBackground } from './MenuBackground.js';
+import { MenuMusic } from './MenuMusic.js';
 import { Enemy } from '../entities/Enemy.js';
 
 let _passiveLevels = {};
@@ -112,6 +113,9 @@ export class UISystem {
         dImg.onload = () => { this._discordLogo = dImg; };
         this.menuBg = new MenuBackground();
         this.menuBg.load();
+        this.menuMusic = new MenuMusic();
+        this._musicHover = false;
+        this._musicSliderDragging = false;
         this.mouseX = 0;
         this.mouseY = 0;
         this._toggleAnim = { mute: 0, fullscreen: 0 };
@@ -120,6 +124,7 @@ export class UISystem {
         this._mouseDown = false;
         this._lastHoveredBtn = null;
         this._sound = null;
+        this._buttonClicked = false;
         this._shopDisplayCoins = 0;
         this._shopTarget = 0;
         this._shopCoinAnimDir = 0;
@@ -211,7 +216,9 @@ export class UISystem {
     isResetConfirmButtonAt(mx, my, buttonId) {
         if (!this._settingsResetConfirmRects || !this._settingsResetConfirmRects[buttonId]) return false;
         const r = this._settingsResetConfirmRects[buttonId];
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     showMuteNotify(isMuted) {
@@ -2102,8 +2109,7 @@ export class UISystem {
         const W = GAME.WIDTH;
         const H = GAME.HEIGHT;
 
-        this.menuBg.render();
-        ctx.drawImage(this.menuBg.canvas, 0, 0);
+        this.menuBg.draw(ctx, this._dt || 0.016);
 
         if (!this._blurCanvas) {
             this._blurCanvas = document.createElement('canvas');
@@ -2389,6 +2395,7 @@ export class UISystem {
         if (!this._shopCardRects) return null;
         for (const [key, rect] of Object.entries(this._shopCardRects)) {
             if (mx >= rect.x && mx <= rect.x + rect.w && my >= rect.y && my <= rect.y + rect.h) {
+                this._buttonClicked = true;
                 return key;
             }
         }
@@ -2398,23 +2405,33 @@ export class UISystem {
     isShopButtonAt(mx, my, buttonId) {
         if (buttonId === 'back' && this._shopBackRect) {
             const r = this._shopBackRect;
-            return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+            const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+            if (hit) this._buttonClicked = true;
+            return hit;
         }
         if (buttonId === 'reset' && this._shopResetRect) {
             const r = this._shopResetRect;
-            return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+            const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+            if (hit) this._buttonClicked = true;
+            return hit;
         }
         if (buttonId === 'shop' && this._gameOverShopRect) {
             const r = this._gameOverShopRect;
-            return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+            const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+            if (hit) this._buttonClicked = true;
+            return hit;
         }
         if (buttonId === 'restart' && this._gameOverRestartRect) {
             const r = this._gameOverRestartRect;
-            return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+            const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+            if (hit) this._buttonClicked = true;
+            return hit;
         }
         if (buttonId === 'menu' && this._gameOverMenuRect) {
             const r = this._gameOverMenuRect;
-            return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+            const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+            if (hit) this._buttonClicked = true;
+            return hit;
         }
         return false;
     }
@@ -2626,7 +2643,9 @@ export class UISystem {
     isShopResetConfirmButtonAt(mx, my, buttonId) {
         if (!this._shopResetConfirmRects || !this._shopResetConfirmRects[buttonId]) return false;
         const r = this._shopResetConfirmRects[buttonId];
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     // --- Low Health Warning ---
@@ -2684,13 +2703,16 @@ export class UISystem {
     isMuteButtonAt(mx, my) {
         if (!this._muteRect) return false;
         const r = this._muteRect;
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     // --- Main Menu ---
 
     showMenu() {
         this.menuScreen = { animTimer: 0 };
+        if (this.menuMusic) this.menuMusic.resume();
     }
 
     hideMenu() { this.menuScreen = null; }
@@ -2815,7 +2837,9 @@ export class UISystem {
     isPauseButtonAt(mx, my, buttonId) {
         if (!this._pauseRects || !this._pauseRects[buttonId]) return false;
         const r = this._pauseRects[buttonId];
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     showPauseConfirm(coins) { this.pauseConfirmScreen = {}; this._pauseConfirmCoins = coins || 0; }
@@ -2926,7 +2950,9 @@ export class UISystem {
     isPauseConfirmButtonAt(mx, my, buttonId) {
         if (!this._pauseConfirmRects || !this._pauseConfirmRects[buttonId]) return false;
         const r = this._pauseConfirmRects[buttonId];
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     drawMenu(ctx, sound, debug, updateChecker, updatePopupActive) {
@@ -2938,16 +2964,16 @@ export class UISystem {
         const W = GAME.WIDTH;
         const H = GAME.HEIGHT;
 
-        this.menuBg.render();
-        ctx.drawImage(this.menuBg.canvas, 0, 0);
+        this.menuBg.draw(ctx, this._dt || 0.016);
 
         this._drawMenuAnimatedEffects(ctx, t, W, H);
 
         this.drawBackgroundParticles(ctx, t);
 
-        // --- Title block ---
         const titleY = H * 0.22;
         const logo = this.menuBg.logoImage;
+
+        // --- Title block ---
         let divY;
 
         if (logo) {
@@ -3117,6 +3143,124 @@ export class UISystem {
 
         const vtW = ctx.measureText(`v${version}`).width + 20;
         this._versionTextRect = { x: W - 20 - vtW, y: H - 28, w: vtW, h: 24 };
+
+        // Music icon - top right
+        this.menuMusic.init();
+        const mmIconSize = 44;
+        const mmPanelFullW = 220;
+        const mmPanelH = 52;
+        const mmPanelFullX = W - 30 - mmPanelFullW;
+        const mmPanelY = 12;
+        const mmCollapsedX = W - 30 - mmIconSize;
+        const mmCollapsedY = 20;
+        const mmHovered = !this._menuPopupActive &&
+            ((this._musicHover && this.mouseX >= mmPanelFullX && this.mouseX <= mmPanelFullX + mmPanelFullW &&
+              this.mouseY >= mmPanelY && this.mouseY <= mmPanelY + mmPanelH) ||
+             (!this._musicHover && this.mouseX >= mmCollapsedX && this.mouseX <= mmCollapsedX + mmIconSize &&
+              this.mouseY >= mmCollapsedY && this.mouseY <= mmCollapsedY + mmIconSize));
+
+        this._musicHover = mmHovered;
+
+        // Smooth expand/collapse animation
+        if (!this._musicExpand) this._musicExpand = 0;
+        const expandTarget = mmHovered ? 1 : 0;
+        this._musicExpand += (expandTarget - this._musicExpand) * 0.18;
+        if (Math.abs(this._musicExpand - expandTarget) < 0.01) this._musicExpand = expandTarget;
+
+        const expand = this._musicExpand;
+        const mmPanelW = mmIconSize + (mmPanelFullW - mmIconSize) * expand;
+        const mmPanelX = W - 30 - mmPanelW;
+
+        if (expand > 0.01) {
+            ctx.globalAlpha = expand;
+
+            ctx.fillStyle = 'rgba(18,18,24,0.9)';
+            ctx.beginPath();
+            ctx.roundRect(mmPanelX, mmPanelY, mmPanelW, mmPanelH, 12);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(mmPanelX, mmPanelY, mmPanelW, mmPanelH, 12);
+            ctx.stroke();
+
+            // Play/Pause button
+            const ppBtnSize = 32;
+            const ppBtnX = mmPanelX + 10;
+            const ppBtnY = mmPanelY + (mmPanelH - ppBtnSize) / 2;
+            const ppHovered = this.mouseX >= ppBtnX && this.mouseX <= ppBtnX + ppBtnSize &&
+                              this.mouseY >= ppBtnY && this.mouseY <= ppBtnY + ppBtnSize;
+
+            ctx.fillStyle = ppHovered ? 'rgba(184,217,78,0.25)' : 'rgba(255,255,255,0.08)';
+            ctx.beginPath();
+            ctx.roundRect(ppBtnX, ppBtnY, ppBtnSize, ppBtnSize, 8);
+            ctx.fill();
+
+            ctx.fillStyle = this.menuMusic.playing ? '#b8d94e' : 'rgba(232,228,220,0.6)';
+            ctx.font = `bold 18px ${FD}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.menuMusic.playing ? '\u23F8' : '\u25B6', ppBtnX + ppBtnSize / 2, ppBtnY + ppBtnSize / 2 + 1);
+
+            this._menuRects['music_pp'] = { x: ppBtnX, y: ppBtnY, w: ppBtnSize, h: ppBtnSize };
+
+            // Volume slider
+            const sliderX = ppBtnX + ppBtnSize + 14;
+            const sliderY = mmPanelY + mmPanelH / 2;
+            const sliderW = mmPanelW - (sliderX - mmPanelX) - 16;
+
+            if (sliderW > 20) {
+                ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                ctx.beginPath();
+                ctx.roundRect(sliderX, sliderY - 3, sliderW, 6, 3);
+                ctx.fill();
+
+                ctx.fillStyle = '#b8d94e';
+                ctx.beginPath();
+                ctx.roundRect(sliderX, sliderY - 3, sliderW * this.menuMusic.volume, 6, 3);
+                ctx.fill();
+
+                const thumbX = sliderX + sliderW * this.menuMusic.volume;
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(thumbX, sliderY, 7, 0, Math.PI * 2);
+                ctx.fill();
+
+                this._menuRects['music_slider'] = { x: sliderX, y: sliderY - 12, w: sliderW, h: 24 };
+
+                ctx.fillStyle = 'rgba(232,228,220,0.4)';
+                ctx.font = `500 11px ${FB}`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(Math.round(this.menuMusic.volume * 100) + '%', sliderX + sliderW / 2, sliderY + 10);
+            }
+
+            ctx.globalAlpha = 1;
+        }
+
+        // Collapsed icon (only drawn when fully collapsed)
+        if (expand < 0.05) {
+            const mmX = mmCollapsedX;
+            const mmY = mmCollapsedY;
+
+            ctx.fillStyle = 'rgba(30,30,40,0.85)';
+            ctx.beginPath();
+            ctx.roundRect(mmX, mmY, mmIconSize, mmIconSize, 10);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.roundRect(mmX, mmY, mmIconSize, mmIconSize, 10);
+            ctx.stroke();
+
+            ctx.fillStyle = this.menuMusic.playing ? '#b8d94e' : 'rgba(232,228,220,0.7)';
+            ctx.font = `bold 22px ${FD}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.menuMusic.playing ? '\u266B' : '\u266A', mmX + mmIconSize / 2, mmY + mmIconSize / 2 + 1);
+
+            this._menuRects['music_icon'] = { x: mmX, y: mmY, w: mmIconSize, h: mmIconSize };
+        }
 
         // Discord button - bottom left
         const discordBtnW = 160;
@@ -3390,7 +3534,9 @@ export class UISystem {
     isUpdatePopupButtonAt(mx, my, id) {
         const btn = id === 'update' ? this._updatePopupUpdateBtn : this._updatePopupCancelBtn;
         if (!btn) return false;
-        return mx >= btn.x && mx <= btn.x + btn.w && my >= btn.y && my <= btn.y + btn.h;
+        const hit = mx >= btn.x && mx <= btn.x + btn.w && my >= btn.y && my <= btn.y + btn.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     drawDebugPassword(ctx, input, wrong) {
@@ -3592,13 +3738,17 @@ export class UISystem {
     isMenuButtonAt(mx, my, buttonId) {
         if (!this._menuRects || !this._menuRects[buttonId]) return false;
         const r = this._menuRects[buttonId];
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     isVersionTextAt(mx, my) {
         if (!this._versionTextRect) return false;
         const r = this._versionTextRect;
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     onVersionTextClick() {
@@ -3875,13 +4025,17 @@ export class UISystem {
     isCharSelectAt(mx, my, charId) {
         if (!this._charRects || !this._charRects[charId]) return false;
         const r = this._charRects[charId];
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     isCharBackAt(mx, my) {
         if (!this._charBackRect) return false;
         const r = this._charBackRect;
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     // --- Loadout Select ---
@@ -4014,14 +4168,124 @@ export class UISystem {
     isLoadoutSelectAt(mx, my) {
         if (this._loadoutBackRect) {
             const b = this._loadoutBackRect;
-            if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) return 'back';
+            if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+                this._buttonClicked = true;
+                return 'back';
+            }
         }
         for (const r of this._loadoutRects) {
             if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) {
+                this._buttonClicked = true;
                 return r.id;
             }
         }
         return null;
+    }
+
+    // --- Startup Splash ---
+
+    showSplash(sound) {
+        this.splashScreen = { timer: 0, phase: 'fadeIn' };
+        this._splashSound = sound;
+        if (sound) {
+            const p = sound.playFile('assets/game-opening.mp3', 0.5);
+            if (p) p.then(result => {
+                if (result) this._splashAudioSrc = result;
+            });
+        }
+    }
+
+    hideSplash() {
+        if (this._splashAudioSrc && this._splashSound && this._splashSound.ctx) {
+            try { this._splashAudioSrc.gain.gain.setValueAtTime(0, this._splashSound.ctx.currentTime); } catch(e) {}
+        }
+        this._splashAudioSrc = null;
+        this._splashSound = null;
+        this.splashScreen = null;
+    }
+
+    updateSplash(dt) {
+        if (!this.splashScreen) return true;
+        this.splashScreen.timer += dt;
+        const t = this.splashScreen.timer;
+
+        if (t < 1.2) this.splashScreen.phase = 'fadeIn';
+        else if (t < 3.2) this.splashScreen.phase = 'logoIn';
+        else if (t < 4.2) this.splashScreen.phase = 'fadeOut';
+        else return true;
+
+        return false;
+    }
+
+    drawSplash(ctx) {
+        if (!this.splashScreen) return;
+        const t = this.splashScreen.timer;
+        const W = GAME.WIDTH;
+        const H = GAME.HEIGHT;
+
+        ctx.fillStyle = '#080a06';
+        ctx.fillRect(0, 0, W, H);
+
+        // Phase: fade in background
+        let bgAlpha = 0;
+        if (t < 1.2) {
+            bgAlpha = Math.min(1, t / 1.2);
+        } else if (t < 3.2) {
+            bgAlpha = 1;
+        } else if (t < 4.2) {
+            bgAlpha = Math.max(0, 1 - (t - 3.2) / 1.0);
+        }
+
+        if (bgAlpha > 0) {
+            ctx.save();
+            ctx.globalAlpha = bgAlpha;
+            this.menuBg.draw(ctx, this._dt || 0.016);
+            ctx.restore();
+        }
+
+        // Phase: logo slides in from top
+        if (t >= 0.8 && t < 4.2) {
+            const logoT = Math.min(1, (t - 0.8) / 1.8);
+            const ease = 1 - Math.pow(1 - logoT, 3);
+
+            const logo = this.menuBg.logoImage;
+            if (logo) {
+                const logoScale = 0.35;
+                const logoW = logo.width * logoScale;
+                const logoH = logo.height * logoScale;
+                const logoX = (W - logoW) / 2;
+                const targetY = H * 0.38;
+                const startY = -logoH - 40;
+                const logoY = startY + (targetY - startY) * ease;
+
+                let logoAlpha = 1;
+                if (t >= 3.2) {
+                    logoAlpha = Math.max(0, 1 - (t - 3.2) / 1.0);
+                }
+
+                ctx.save();
+                ctx.globalAlpha = logoAlpha;
+
+                ctx.shadowColor = '#9a6ec8';
+                ctx.shadowBlur = 50 * (0.4 + Math.sin(t * 0.8) * 0.1);
+                ctx.drawImage(logo, logoX, logoY, logoW, logoH);
+                ctx.shadowBlur = 0;
+
+                ctx.drawImage(logo, logoX, logoY, logoW, logoH);
+
+                ctx.restore();
+            }
+        }
+
+        // Vignette
+        const vigAlpha = bgAlpha * 0.7;
+        if (vigAlpha > 0) {
+            const vigGrad = ctx.createRadialGradient(W / 2, H / 2, W * 0.15, W / 2, H / 2, W * 0.65);
+            vigGrad.addColorStop(0, 'rgba(8,10,6,0.0)');
+            vigGrad.addColorStop(1, `rgba(8,10,6,${vigAlpha})`);
+            ctx.fillStyle = vigGrad;
+            ctx.fillRect(0, 0, W, H);
+        }
     }
 
     // --- Intro Movie ---
@@ -4197,7 +4461,9 @@ export class UISystem {
     isIntroSkipAt(mx, my) {
         if (!this._introSkipRect) return false;
         const r = this._introSkipRect;
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     // --- Tutorial Screen ---
@@ -4211,14 +4477,19 @@ export class UISystem {
     isTutorialButtonAt(mx, my, buttonId) {
         if (!this._tutorialRects || !this._tutorialRects[buttonId]) return false;
         const r = this._tutorialRects[buttonId];
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     getTutorialTabAt(mx, my) {
         if (!this._tutorialTabRects) return null;
         for (let i = 0; i < this._tutorialTabRects.length; i++) {
             const r = this._tutorialTabRects[i];
-            if (r && mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) return i;
+            if (r && mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) {
+                this._buttonClicked = true;
+                return i;
+            }
         }
         return null;
     }
@@ -4239,8 +4510,7 @@ export class UISystem {
         const tab = this.tutorialScreen.tab;
         const tabNames = ['Controls', 'Weapons', 'Passives', 'Enemies', 'Evolutions'];
 
-        this.menuBg.render();
-        ctx.drawImage(this.menuBg.canvas, 0, 0);
+        this.menuBg.draw(ctx, this._dt || 0.016);
         ctx.fillStyle = 'rgba(10,14,8,0.82)';
         ctx.fillRect(0, 0, W, H);
 
@@ -5003,7 +5273,9 @@ export class UISystem {
     isAchievementsButtonAt(mx, my, buttonId) {
         if (!this._achievRects || !this._achievRects[buttonId]) return false;
         const r = this._achievRects[buttonId];
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     drawAchievements(ctx) {
@@ -5014,8 +5286,7 @@ export class UISystem {
         const H = GAME.HEIGHT;
         this._achievRects = {};
 
-        this.menuBg.render();
-        ctx.drawImage(this.menuBg.canvas, 0, 0);
+        this.menuBg.draw(ctx, this._dt || 0.016);
 
         if (!this._blurCanvas) {
             this._blurCanvas = document.createElement('canvas');
@@ -5151,7 +5422,9 @@ export class UISystem {
     isChangelogButtonAt(mx, my, buttonId) {
         if (!this._clRects || !this._clRects[buttonId]) return false;
         const r = this._clRects[buttonId];
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     drawChangelog(ctx) {
@@ -5162,8 +5435,7 @@ export class UISystem {
         const H = GAME.HEIGHT;
         this._clRects = {};
 
-        this.menuBg.render();
-        ctx.drawImage(this.menuBg.canvas, 0, 0);
+        this.menuBg.draw(ctx, this._dt || 0.016);
 
         if (!this._blurCanvas) {
             this._blurCanvas = document.createElement('canvas');
@@ -5492,7 +5764,109 @@ export class UISystem {
     isExitConfirmButtonAt(mx, my, id) {
         const r = this._exitConfirmRects?.[id];
         if (!r) return false;
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
+    }
+
+    // --- Discord Redirect Popup ---
+
+    drawDiscordConfirm(ctx) {
+        const t = this.hudTimer;
+        const W = GAME.WIDTH;
+        const H = GAME.HEIGHT;
+        this._discordConfirmRects = {};
+
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(0, 0, W, H);
+
+        const boxW = 420;
+        const boxH = 260;
+        const boxX = (W - boxW) / 2;
+        const boxY = (H - boxH) / 2;
+
+        ctx.fillStyle = '#23272a';
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxW, boxH, 12);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(88,101,242,0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxW, boxH, 12);
+        ctx.stroke();
+
+        const discordLogo = this._discordLogo;
+        if (discordLogo) {
+            const logoW = 68;
+            const logoH = 52;
+            const logoX = W / 2;
+            const logoY = boxY + 42;
+            ctx.save();
+            ctx.beginPath();
+            ctx.ellipse(logoX, logoY, logoW / 2, logoH / 2, 0, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(discordLogo, logoX - logoW / 2, logoY - logoH / 2, logoW, logoH);
+            ctx.restore();
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `700 20px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Join our Discord?', W / 2, boxY + 88);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = `400 13px ${FB}`;
+        ctx.fillText('You\'ll be redirected to an invite link', W / 2, boxY + 114);
+        ctx.fillText('for the Grave Bloom Discord server.', W / 2, boxY + 132);
+
+        const btnW = 160;
+        const btnH = 42;
+        const btnY = boxY + boxH - 65;
+        const gap = 16;
+        const joinX = W / 2 - btnW - gap / 2;
+        const cancelX = W / 2 + gap / 2;
+
+        const joinHover = this.mouseX >= joinX && this.mouseX <= joinX + btnW &&
+                         this.mouseY >= btnY && this.mouseY <= btnY + btnH;
+        const cancelHover = this.mouseX >= cancelX && this.mouseX <= cancelX + btnW &&
+                           this.mouseY >= btnY && this.mouseY <= btnY + btnH;
+
+        ctx.fillStyle = joinHover ? '#5865f2' : '#4752c4';
+        ctx.beginPath();
+        ctx.roundRect(joinX, btnY, btnW, btnH, 8);
+        ctx.fill();
+        if (joinHover) drawGlowBorder(ctx, joinX - 2, btnY - 2, btnW + 4, btnH + 4, 10, '#5865f2', t, 8);
+        ctx.fillStyle = '#fff';
+        ctx.font = `600 14px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Join Server', joinX + btnW / 2, btnY + btnH / 2);
+
+        ctx.fillStyle = cancelHover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)';
+        ctx.beginPath();
+        ctx.roundRect(cancelX, btnY, btnW, btnH, 8);
+        ctx.fill();
+        if (cancelHover) drawGlowBorder(ctx, cancelX - 2, btnY - 2, btnW + 4, btnH + 4, 10, '#666', t, 6);
+        ctx.fillStyle = cancelHover ? '#fff' : 'rgba(255,255,255,0.5)';
+        ctx.font = `500 14px ${FB}`;
+        ctx.textAlign = 'center';
+        ctx.fillText('Cancel', cancelX + btnW / 2, btnY + btnH / 2);
+
+        this._discordConfirmRects = {
+            join: { x: joinX, y: btnY, w: btnW, h: btnH },
+            cancel: { x: cancelX, y: btnY, w: btnW, h: btnH }
+        };
+    }
+
+    isDiscordConfirmButtonAt(mx, my, id) {
+        const r = this._discordConfirmRects?.[id];
+        if (!r) return false;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 
     // --- Settings Screen ---
@@ -5511,8 +5885,7 @@ export class UISystem {
         const W = GAME.WIDTH;
         const H = GAME.HEIGHT;
 
-        this.menuBg.render();
-        ctx.drawImage(this.menuBg.canvas, 0, 0);
+        this.menuBg.draw(ctx, this._dt || 0.016);
 
         // Dark overlay
         ctx.fillStyle = 'rgba(10,14,8,0.7)';
@@ -5865,6 +6238,8 @@ export class UISystem {
     isSettingsButtonAt(mx, my, buttonId) {
         if (!this._settingsRects || !this._settingsRects[buttonId]) return false;
         const r = this._settingsRects[buttonId];
-        return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+        if (hit) this._buttonClicked = true;
+        return hit;
     }
 }

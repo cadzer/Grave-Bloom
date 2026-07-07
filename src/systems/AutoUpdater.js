@@ -1,3 +1,5 @@
+const GITHUB_TOKEN = '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';
+
 export class AutoUpdater {
     constructor() {
         this.downloading = false;
@@ -110,7 +112,11 @@ Set WshShell = Nothing`;
         return new Promise((resolve, reject) => {
             const file = fs.createWriteStream(dest);
             const request = (downloadUrl) => {
-                https.get(downloadUrl, { headers: { 'User-Agent': 'GraveBloom-Updater' } }, (response) => {
+                const headers = { 'User-Agent': 'GraveBloom-Updater' };
+                if (GITHUB_TOKEN && GITHUB_TOKEN !== 'YOUR_TOKEN_HERE') {
+                    headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+                }
+                https.get(downloadUrl, { headers }, (response) => {
                     if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
                         request(response.headers.location);
                         return;

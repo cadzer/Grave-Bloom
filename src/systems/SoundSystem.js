@@ -12,10 +12,14 @@ export class SoundSystem {
     }
 
     _init() {
-        if (this._initialized) return;
+        if (this._initialized) {
+            if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            return;
+        }
         try {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
             this._initialized = true;
+            if (this.ctx.state === 'suspended') this.ctx.resume();
         } catch (e) { /* no audio support */ }
     }
 
@@ -119,9 +123,7 @@ export class SoundSystem {
     }
 
     playChestOpen() {
-        this._init();
-        this._tone(400, 0.15, 'sine', 0.08, 800);
-        this._noise(0.1, 0.03);
+        this.playFile('assets/chest-opened.mp3', 0.5);
     }
 
     playEvolution() {
@@ -155,5 +157,41 @@ export class SoundSystem {
     playHover() {
         this._init();
         this._tone(800, 0.03, 'sine', 0.02);
+    }
+
+    playClick() {
+        if (this.muted) return;
+        this._init();
+        if (!this.ctx) return;
+        return fetch('assets/button-click.mp3')
+            .then(r => r.arrayBuffer())
+            .then(buf => this.ctx.decodeAudioData(buf))
+            .then(decoded => {
+                const src = this.ctx.createBufferSource();
+                src.buffer = decoded;
+                src.connect(this.ctx.destination);
+                src.start(0);
+            })
+            .catch(() => {});
+    }
+
+    playFile(url, volume) {
+        if (this.muted) return null;
+        this._init();
+        if (!this.ctx) return null;
+        return fetch(url)
+            .then(r => r.arrayBuffer())
+            .then(buf => this.ctx.decodeAudioData(buf))
+            .then(decoded => {
+                const src = this.ctx.createBufferSource();
+                const gain = this.ctx.createGain();
+                src.buffer = decoded;
+                gain.gain.value = clamp(volume || 0.5, 0, 1);
+                src.connect(gain);
+                gain.connect(this.ctx.destination);
+                src.start(0);
+                return { src, gain };
+            })
+            .catch(() => null);
     }
 }
