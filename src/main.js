@@ -1176,6 +1176,9 @@ class Game {
                 this.ui.hideSplash();
                 this.gameState = 'menu';
                 this.ui.showMenu();
+                if (this.updateChecker.updateAvailable) {
+                    this._showUpdatePopup = true;
+                }
             }
             return;
         }
