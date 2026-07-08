@@ -1,7 +1,7 @@
 // Central config for all game constants.
 // Change values here instead of hunting through multiple files.
 
-export const VERSION = '1.3.4';
+export const VERSION = '1.3.5';
 export const GITHUB_REPO = 'cadzer/Grave-Bloom';
 
 export const GAME = {

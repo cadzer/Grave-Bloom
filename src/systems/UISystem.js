@@ -132,6 +132,8 @@ export class UISystem {
         this._debugClickCount = 0;
         this._debugClickTimer = 0;
         this._versionTextRect = null;
+        this._changelogEntries = null;
+        this._changelogFetching = false;
         this.particles = [];
         for (let i = 0; i < 40; i++) {
             this.particles.push({
@@ -153,6 +155,58 @@ export class UISystem {
 
     setSound(sound) {
         this._sound = sound;
+    }
+
+    async fetchChangelog() {
+        if (this._changelogEntries || this._changelogFetching) return;
+        this._changelogFetching = true;
+        try {
+            const GITHUB_REPO = 'cadzer/Grave-Bloom';
+            const GITHUB_TOKEN = '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';
+            const headers = { 'User-Agent': 'GraveBloom-Updater' };
+            if (GITHUB_TOKEN && GITHUB_TOKEN !== 'YOUR_TOKEN_HERE') {
+                headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+            }
+            const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=10`, { headers });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            const entries = [];
+            for (const rel of data) {
+                if (rel.draft) continue;
+                const version = rel.tag_name || '';
+                const date = rel.published_at ? new Date(rel.published_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
+                const body = rel.body || '';
+                const sections = [];
+                const lines = body.split('\n');
+                let currentSection = null;
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed) continue;
+                    const sectionMatch = trimmed.match(/^#{1,3}\s+(.+)/);
+                    if (sectionMatch) {
+                        currentSection = { title: sectionMatch[1], color: '#c4a23a', items: [] };
+                        sections.push(currentSection);
+                        continue;
+                    }
+                    const itemMatch = trimmed.match(/^[-*]\s+(.+)/);
+                    if (itemMatch && currentSection) {
+                        currentSection.items.push(itemMatch[1]);
+                    } else if (itemMatch && !currentSection) {
+                        currentSection = { title: 'Changes', color: '#c4a23a', items: [itemMatch[1]] };
+                        sections.push(currentSection);
+                    }
+                }
+                if (sections.length === 0 && body.trim()) {
+                    sections.push({ title: 'Notes', color: '#c4a23a', items: body.trim().split('\n').filter(l => l.trim()) });
+                }
+                entries.push({ version, date, tag: entries.length === 0 ? 'Latest' : 'Stable', tagColor: entries.length === 0 ? '#7c9a6e' : '#7b5ea7', sections });
+            }
+            this._changelogEntries = entries;
+        } catch (e) {
+            this._changelogEntries = null;
+        } finally {
+            this._changelogFetching = false;
+        }
     }
 
     showTooltip(text, x, y) {
@@ -5410,6 +5464,7 @@ export class UISystem {
 
     showChangelog() {
         this.changelogScreen = { scrollY: 0 };
+        this.fetchChangelog();
     }
 
     hideChangelog() { this.changelogScreen = null; }
@@ -5478,7 +5533,7 @@ export class UISystem {
         ctx.roundRect(panelX, panelY, panelW, panelH, 16);
         ctx.clip();
 
-        const entries = [
+        const entries = this._changelogEntries || [
             {
                 version: 'v1.3.1',
                 date: 'July 2026',
@@ -5560,6 +5615,15 @@ export class UISystem {
                 ]
             }
         ];
+
+        if (!this._changelogEntries && this._changelogFetching) {
+            ctx.fillStyle = 'rgba(232,228,220,0.4)';
+            ctx.font = `400 16px ${FB}`;
+            ctx.textAlign = 'center';
+            ctx.fillText('Loading changelog...', W / 2, panelY + panelH / 2);
+            ctx.restore();
+            return;
+        }
 
         const padX = 30;
         const padY = 20;
