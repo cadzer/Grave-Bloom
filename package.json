@@ -1,6 +1,6 @@
 {
   "name": "grave-bloom",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "main": "index.html",
   "scripts": {
     "dev": "npx nw .",

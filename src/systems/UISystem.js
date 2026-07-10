@@ -162,9 +162,15 @@ export class UISystem {
         this._changelogFetching = true;
         try {
             const GITHUB_REPO = 'cadzer/Grave-Bloom';
-            const GITHUB_TOKEN = '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';
+            let GITHUB_TOKEN = '';
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const p = path.join(process.cwd(), 'secrets.json');
+                if (fs.existsSync(p)) GITHUB_TOKEN = JSON.parse(fs.readFileSync(p, 'utf8')).githubToken || '';
+            } catch(e) {}
             const headers = { 'User-Agent': 'GraveBloom-Updater' };
-            if (GITHUB_TOKEN && GITHUB_TOKEN !== 'YOUR_TOKEN_HERE') {
+            if (GITHUB_TOKEN) {
                 headers['Authorization'] = `token ${GITHUB_TOKEN}`;
             }
             const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=10`, { headers });
@@ -182,9 +188,9 @@ export class UISystem {
                 for (const line of lines) {
                     const trimmed = line.trim();
                     if (!trimmed) continue;
-                    const sectionMatch = trimmed.match(/^#{1,3}\s+(.+)/);
+                    const sectionMatch = trimmed.match(/^(?:#{1,3}\s+(.+)|(?:\*\*)(.+?)(?:\*\*))/);
                     if (sectionMatch) {
-                        currentSection = { title: sectionMatch[1], color: '#c4a23a', items: [] };
+                        currentSection = { title: sectionMatch[1] || sectionMatch[2], color: '#c4a23a', items: [] };
                         sections.push(currentSection);
                         continue;
                     }
@@ -3801,7 +3807,6 @@ export class UISystem {
         if (!this._versionTextRect) return false;
         const r = this._versionTextRect;
         const hit = mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
-        if (hit) this._buttonClicked = true;
         return hit;
     }
 
@@ -4242,7 +4247,7 @@ export class UISystem {
         this.splashScreen = { timer: 0, phase: 'fadeIn' };
         this._splashSound = sound;
         if (sound) {
-            const p = sound.playFile('assets/game-opening.mp3', 0.5);
+            const p = sound.playFile('assets/game-opening.mp3', 0.5, true);
             if (p) p.then(result => {
                 if (result) this._splashAudioSrc = result;
             });
@@ -5464,6 +5469,7 @@ export class UISystem {
 
     showChangelog() {
         this.changelogScreen = { scrollY: 0 };
+        this._changelogEntries = null;
         this.fetchChangelog();
     }
 

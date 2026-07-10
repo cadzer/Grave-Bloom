@@ -1,4 +1,13 @@
-const GITHUB_TOKEN = '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';
+function _loadToken() {
+    try {
+        const fs = require('fs');
+        const path = require('path');
+        const p = path.join(process.cwd(), 'secrets.json');
+        if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8')).githubToken || '';
+    } catch(e) {}
+    return '';
+}
+const GITHUB_TOKEN = _loadToken();
 
 export class AutoUpdater {
     constructor() {
@@ -113,7 +122,7 @@ Set WshShell = Nothing`;
             const file = fs.createWriteStream(dest);
             const request = (downloadUrl) => {
                 const headers = { 'User-Agent': 'GraveBloom-Updater' };
-                if (GITHUB_TOKEN && GITHUB_TOKEN !== 'YOUR_TOKEN_HERE') {
+                if (GITHUB_TOKEN) {
                     headers['Authorization'] = `token ${GITHUB_TOKEN}`;
                 }
                 https.get(downloadUrl, { headers }, (response) => {

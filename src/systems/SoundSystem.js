@@ -175,8 +175,8 @@ export class SoundSystem {
             .catch(() => {});
     }
 
-    playFile(url, volume) {
-        if (this.muted) return null;
+    playFile(url, volume, force) {
+        if (!force && this.muted) return null;
         this._init();
         if (!this.ctx) return null;
         return fetch(url)
